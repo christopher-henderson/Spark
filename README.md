@@ -1,2 +1,2 @@
-# ser502-spark
-ASU SER502 Spring 2017 - Final Project
+# SER502 - Spring 2017 - Group 25
+ASU SER502 Spring 2017 - Final Project (Group #25)
