@@ -1,17 +1,20 @@
-% exp(integer(Integer)) --> int(integer).
+exp(addition(T,E)) --> int(T), ['+'], exp(E).
+exp(int(digit(D), int(I))) --> digit(D), exp(I).
+exp(int(D)) --> digit(D).
+% exp(terminal(T)) --> int(T).
 
 % Single zero is fine.
-int(int(digit(0))) --> [0].
+int(digit(0)) --> [0].
 % Negative zero is just zero.
-int(int(digit(0))) --> [-], [0].
+int(digit(0)) --> [-], [0].
 % Otherwise, no integer can begin with a zero.
 int(Integer) --> \+ [0], int_(Integer).
 % Negative integers are integers that start with "-"
-int_(negative(Integer)) --> [-], int(Integer).
+int(negative(Integer)) --> [-], int(Integer).
 % We use int_ here because now we can have arbitrary zeroes without
 % worrying about the leading zero case.
 int_(int(H, T)) --> digit(H), int_(T).
-int_(Digit) --> digit(Digit).
+int_(int(Digit)) --> digit(Digit).
 
 digit(digit(0)) --> [0].
 digit(digit(1)) --> [1].
@@ -24,8 +27,15 @@ digit(digit(7)) --> [7].
 digit(digit(8)) --> [8].
 digit(digit(9)) --> [9].
 
-% ev_expr(int(Integer), R) :- ev_term(T, R1),
 
+
+
+ev_int(int(digit(Digit)), Digit, 10).
+ev_int(int(digit(Digit), int(Integer)), R, X) :- ev_int(Integer, R1, X1),
+                                                 X is X1 * 10,
+                                                 R is Digit * X1 + R1.
+ev_expr(int(digit(D)), R) :- R is D.
+ev_expr(int(digit(D), int(Integer)), R) :- ev_int(int(digit(D), int(Integer)), R, _).
 
 ev_expr(addition(T, E), R) :- 	ev_term(T, R1),
     				  	ev_expr(E, R2),
@@ -34,5 +44,5 @@ ev_expr(addition(T, E), R) :- 	ev_term(T, R1),
 ev_term(terminal(T), T).
 
 % Query starts here eg. eval([7,'-',3],X)
-eval(Exp, Result) 	:- 	exp(T, Exp, []),
+eval(Exp, Result) 	:- 	exp(T, Exp, []), write(T),
     					ev_expr(T, Result).
