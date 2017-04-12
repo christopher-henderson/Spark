@@ -33,35 +33,43 @@ digit(digit(8)) --> [8].
 digit(digit(9)) --> [9].
 
 ev_expr(int(digit(Digit)), Digit, 10).
-ev_expr(int(digit(Digit), Integer), R, X) :- ev_expr(Integer, R1, X1),
-                                                 X is X1 * 10,
-                                                 R is Digit * X1 + R1.
-
-ev_expr(int(digit(D), Integer), R) :-  ev_expr(Integer, R1, X),
-                                            R is D * X + R1.
+ev_expr(int(digit(Digit), Integer), R, X) :-
+    ev_expr(Integer, R1, X1),
+    X is X1 * 10,
+    R is Digit * X1 + R1.
+ev_expr(int(digit(D), Integer), R) :-
+    ev_expr(Integer, R1, X),
+    R is D * X + R1.
 ev_expr(int(digit(D)), R) :- R is D.
-ev_expr(negative(Integer), R) :- ev_expr(Integer, R1),
-                                 R is R1 * -1.
+ev_expr(negative(Integer), R) :-
+  ev_expr(Integer, R1),
+  R is R1 * -1.
 
 % The next few lines are the evaluation functions
-ev_expr(ep(T, E),R) :- 	ev_expr(T, R1),
-    				  	ev_expr(E, R2),
-    					R is R1 + R2.
-ev_expr(em(T, E),R) :- 	ev_expr(T, R1),
-    				  	ev_expr(E, R2),
-    					R is R1 * R2.
-ev_expr(es(T, E),R) :- 	ev_expr(T, R1),
-    				  	ev_expr(E, R2),
-    					R is R1 - R2.
-ev_expr(ed(T, E),R) :- 	ev_expr(T, R1),
-    				  	ev_expr(E, R2),
-    					R is R1 / R2.
-ev_expr(er(T, E),R) :- 	ev_expr(T, R1),
-    				  	ev_expr(E, R2),
-    					R is R1 mod R2.
-ev_expr(et(T),R)	:- 	ev_expr(T, R).
+ev_expr(ep(T, E),R) :-
+    ev_expr(T, R1),
+    ev_expr(E, R2),
+    R is R1 + R2.
+ev_expr(em(T, E),R) :-
+    ev_expr(T, R1),
+    ev_expr(E, R2),
+    R is R1 * R2.
+ev_expr(es(T, E),R) :-
+    ev_expr(T, R1),
+    ev_expr(E, R2),
+    R is R1 - R2.
+ev_expr(ed(T, E),R) :-
+    ev_expr(T, R1),
+    ev_expr(E, R2),
+    R is R1 / R2.
+ev_expr(er(T, E),R) :-
+    ev_expr(T, R1),
+    ev_expr(E, R2),
+    R is R1 mod R2.
+ev_expr(et(T),R) :- 	ev_expr(T, R).
 ev_expr(t(T), T).
 
 % Query starts here eg. eval([7,'-',3],X)
-eval(Exp, Result) 	:- 	exp(T, Exp, []), write(T),
-    					ev_expr(T, Result).
+eval(Exp, Result) :-
+    exp(T, Exp, []),
+    ev_expr(T, Result).
