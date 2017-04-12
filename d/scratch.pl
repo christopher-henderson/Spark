@@ -1,7 +1,8 @@
 exp(addition(T,E)) --> int(T), ['+'], exp(E).
-exp(int(digit(D), int(I))) --> digit(D), exp(I).
+exp(int(D, I)) --> digit(D), exp(I).
 exp(int(D)) --> digit(D).
-% exp(terminal(T)) --> int(T).
+exp(negative(Integer)) --> [-], exp(Integer).
+
 
 % Single zero is fine.
 int(digit(0)) --> [0].
@@ -30,13 +31,16 @@ digit(digit(9)) --> [9].
 
 
 
-ev_int(int(digit(Digit)), Digit, 10).
-ev_int(int(digit(Digit), int(Integer)), R, X) :- ev_int(Integer, R1, X1),
+ev_expr(int(digit(Digit)), Digit, 10).
+ev_expr(int(digit(Digit), Integer), R, X) :- ev_expr(Integer, R1, X1),
                                                  X is X1 * 10,
                                                  R is Digit * X1 + R1.
-ev_expr(int(digit(D)), R) :- R is D.
-ev_expr(int(digit(D), int(Integer)), R) :- ev_int(int(digit(D), int(Integer)), R, _).
 
+ev_expr(int(digit(D), Integer), R) :-  ev_expr(Integer, R1, X),
+                                            R is D * X + R1.
+ev_expr(int(digit(D)), R) :- R is D.
+ev_expr(negative(Integer), R) :- ev_expr(Integer, R1),
+                                 R is R1 * -1.
 ev_expr(addition(T, E), R) :- 	ev_term(T, R1),
     				  	ev_expr(E, R2),
     					R is R1 + R2.
