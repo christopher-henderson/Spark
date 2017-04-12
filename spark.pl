@@ -38,4 +38,4 @@ ev_term(t(T), T).
 
 % Query starts here eg. eval([7,'-',3],X)
 eval(Exp, Result) 	:- 	exp(T, Exp, []),
-    					          ev_expr(T, Result).
+    					ev_expr(T, Result).
