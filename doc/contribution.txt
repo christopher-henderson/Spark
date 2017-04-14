@@ -1,0 +1,11 @@
+Until Now:
+  Christopher Henderson - EBNF Grammar, implementation of signed integers in DCG.
+  Cephas Armstrong-Mensah - Initial DCG for arithmetic operations parsing and evaluation.
+  Nelson Tran - Lexer in Prolog, identifier definition in DCG.
+  David Henderson - Language design and goals.
+
+Planned:
+  Christopher Henderson - Refinement of grammar.
+  Cephas Armstrong-Mensah - Refinement of interpreter.
+  Nelson Tran - Refinment of lexer.
+  David Henderson - Refinement of DCG.
