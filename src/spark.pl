@@ -9,8 +9,8 @@ source_to_tree(Filename) :-
     atom_chars(Atom, Characters),
     lexer(Tokens, Characters, []),
     program(Tree, Tokens, []),
-    write(Tree),
-    nl.
+    write(Tree), nl,
+    eval(Tree).
 
 % ----------------------------------------------------------------------
 %   LEXER
@@ -113,7 +113,7 @@ letter(l('Z')) --> ['Z'].
 
 % Identifiers.
 
-identifier(id(I, L)) --> letter(L), identifier(I).
+identifier(id(L, I)) --> letter(L), identifier(I).
 identifier(id(L)) --> letter(L).
 
 % Integers.
@@ -200,6 +200,32 @@ program(program(SL)) --> statement_list(SL).
 %   INTERPRETER
 % ----------------------------------------------------------------------
 
+% Environment Definitions
+
+% Get from the environment.
+
+env(Identifier, Value, [[Identifier, Value] | _]).
+env(Identifier, Value, [_ | T]) :- env(Identifier, Value, T).
+
+% Set the environment and return the new environment.
+
+env(Identifier, Value, [], NewEnv) :-
+  NewEnv = [[Identifier, Value]].
+
+env(Identifier, Value, [[Identifier, _] | T], NewEnv) :-
+  append([[Identifier, Value]], T, NewEnv).
+
+env(Identifier, Value, [H | T], NewEnv) :-
+  env(Identifier, Value, T, InterimEnv),
+  append([H], InterimEnv, NewEnv).
+
+% Evaluate assignment operator.
+
+eval_expr(ea(I, E), Environment, NewEnv) :-
+  eval_expr(I, Identifier),
+  eval_expr(E, Value),
+  env(Identifier, Value, Environment, NewEnv).
+
 % Evaluate integers.
 
 eval_expr(int(d(D)), D, 10).
@@ -254,8 +280,40 @@ eval_expr(er(E1, E2), R) :-
     eval_expr(E2, R2),
     R is R1 mod R2.
 
+% Evaluate an identifier to a single symbol
+
+eval_expr(l(L), Character) :- Character = L.
+eval_expr(id(L), Character) :- eval_expr(L, Character).
+
+eval_expr(id(L, I), R) :-
+  eval_expr(L, Head),
+  eval_expr(I, Tail),
+  string_concat(Head, Tail, R).
+
 % Evaluate the result of an expression.
 
 eval_expr(Tokens, Result) :-
     expression(ParseTree, Tokens, []),
     eval_expr(ParseTree, Result).
+
+% Runner for the interpreter.
+
+%  Evaluate a program given a statement list and an empty environment.
+
+eval(program(SL)) :- eval(SL, []).
+
+% Evaluate S in Environment and produce NewEnv, then excecute the
+% statement list using NewEnv.
+
+eval(sl(S, SL), Environment) :- eval(S, Environment, NewEnv), eval(SL, NewEnv).
+
+% A statement that has only one statement has no meaningful effect on the
+% environment.
+eval(sl(S), Environment) :- eval(S, Environment, _).
+
+% Evaluate a statement.
+
+eval(stmt(Expression), Environment, NewEnv) :-
+  eval_expr(Expression, Environment, NewEnv), write(NewEnv).
+
+eval(expression(E), _, _) :- eval_expr(E, _).
