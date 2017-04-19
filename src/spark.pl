@@ -1,3 +1,6 @@
+:- discontiguous eval_expr/3.
+:- discontiguous eval_expr/2.
+
 % Reads in a Spark source file and outputs the parse tree.
 %
 % Executing the query 'working_directory(CWD, CWD)' will output the
@@ -222,8 +225,8 @@ env(Identifier, Value, [H | T], NewEnv) :-
 % Evaluate assignment operator.
 
 eval_expr(ea(I, E), Environment, NewEnv) :-
-  eval_expr(I, Identifier),
-  eval_expr(E, Value),
+  build_symbol(I, Identifier),
+  eval_expr(E, Environment, Value),
   env(Identifier, Value, Environment, NewEnv).
 
 % Evaluate integers.
@@ -234,60 +237,64 @@ eval_expr(int(d(D), I), R, X) :-
     X is X1 * 10,
     R is X1 * D + R1.
 
-eval_expr(int(d(D)), D).
-eval_expr(int(d(D), I), R) :-
+eval_expr(int(d(D)), _, D).
+eval_expr(int(d(D), I), _, R) :-
     eval_expr(I, R1, X),
     R is X * D + R1.
 
 % Evaluate unary minus (negative integers).
 
-eval_expr(neg(I), R) :-
-    eval_expr(I, R1),
+eval_expr(neg(I), Env, R) :-
+    eval_expr(I, Env, R1),
     R is R1 * -1.
 
 % Evaluate addition expressions.
 
-eval_expr(ep(E1, E2), R) :-
-    eval_expr(E1, R1),
-    eval_expr(E2, R2),
+eval_expr(ep(E1, E2), Env, R) :-
+    eval_expr(E1, Env, R1),
+    eval_expr(E2, Env, R2),
     R is R1 + R2.
 
 % Evaluate multiplication expressions.
 
-eval_expr(em(E1, E2), R) :-
-    eval_expr(E1, R1),
-    eval_expr(E2, R2),
+eval_expr(em(E1, E2), Env, R) :-
+    eval_expr(E1, Env, R1),
+    eval_expr(E2, Env, R2),
     R is R1 * R2.
 
 % Evaluate subtraction expression.
 
-eval_expr(es(E1, E2), R) :-
-    eval_expr(E1, R1),
-    eval_expr(E2, R2),
+eval_expr(es(E1, E2), Env, R) :-
+    eval_expr(E1, Env, R1),
+    eval_expr(E2, Env, R2),
     R is R1 - R2.
 
 % Evaluate division expressions.
 
-eval_expr(ed(E1, E2), R) :-
-    eval_expr(E1, R1),
-    eval_expr(E2, R2),
+eval_expr(ed(E1, E2), Env, R) :-
+    eval_expr(E1, Env, R1),
+    eval_expr(E2, Env, R2),
     R is R1 / R2.
 
 % Evaluate modulus expressions.
 
-eval_expr(er(E1, E2), R) :-
-    eval_expr(E1, R1),
-    eval_expr(E2, R2),
+eval_expr(er(E1, E2), Env, R) :-
+    eval_expr(E1, Env, R1),
+    eval_expr(E2, Env, R2),
     R is R1 mod R2.
 
 % Evaluate an identifier to a single symbol
 
-eval_expr(l(L), Character) :- Character = L.
-eval_expr(id(L), Character) :- eval_expr(L, Character).
+eval_expr(id(L, I), Env, Value) :-
+  build_symbol(id(L, I), Identifier),
+  env(Identifier, Value, Env).
 
-eval_expr(id(L, I), R) :-
-  eval_expr(L, Head),
-  eval_expr(I, Tail),
+build_symbol(l(L), Character) :- Character = L.
+build_symbol(id(l(L)), Character) :- Character = L.
+
+build_symbol(id(L, I), R) :-
+  build_symbol(L, Head),
+  build_symbol(I, Tail),
   string_concat(Head, Tail, R).
 
 % Evaluate the result of an expression.
@@ -305,7 +312,9 @@ eval(program(SL)) :- eval(SL, []).
 % Evaluate S in Environment and produce NewEnv, then excecute the
 % statement list using NewEnv.
 
-eval(sl(S, SL), Environment) :- eval(S, Environment, NewEnv), eval(SL, NewEnv).
+eval(sl(S, SL), Environment) :-
+  eval(S, Environment, NewEnv),
+  eval(SL, NewEnv).
 
 % A statement that has only one statement has no meaningful effect on the
 % environment.
