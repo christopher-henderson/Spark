@@ -1,3 +1,2 @@
 bob = 1;
-alice = 2;
-jane = bob;
+alice = 2 + 3;
