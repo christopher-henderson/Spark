@@ -1,2 +1,5 @@
 bob = 1;
 alice = bob + 1 + bob*3;
+bob = alice + 1;
+eve = alice / 2;
+jane = eve % 2;

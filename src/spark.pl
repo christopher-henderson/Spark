@@ -203,34 +203,72 @@ program(program(SL)) --> statement_list(SL).
 %   INTERPRETER
 % ----------------------------------------------------------------------
 
-% Environment Definitions
+%
+%   Runner
+%   These eval predicates are the top level drivers of the interpreter.
+%
 
+%  Evaluate a program given a statement list and an empty environment.
+eval(program(SL)) :- eval(SL, []).
+
+% Evaluate S in Environment and produce NewEnv, then excecute the
+% statement list using NewEnv.
+eval(sl(S, SL), Environment) :-
+  eval(S, Environment, NewEnv),
+  eval(SL, NewEnv).
+
+% A statement that has only one statement has no meaningful effect on the
+% environment.
+eval(sl(S), Environment) :- eval(S, Environment, _).
+
+% Evaluate a single statement in an environment.
+eval(stmt(Expression), Environment, NewEnv) :-
+  eval_expr(Expression, Environment, NewEnv), write(NewEnv), nl.
+
+% Evaluating an expression in isolation has no side effects.
+eval(expression(E), _, _) :- eval_expr(E, _).
+
+%
+% Environment Definition
+%
+
+% Getter.
 % Get from the environment.
-
 env(Identifier, Value, [[Identifier, Value] | _]).
 env(Identifier, Value, [_ | T]) :- env(Identifier, Value, T).
 
-% Set the environment and return the new environment.
-
+% Setter.
+% If the name cannot be resolved in the given environment, then append it
+% and its value.
 env(Identifier, Value, [], NewEnv) :-
   NewEnv = [[Identifier, Value]].
 
+% Setter.
+% Symbol was found, so now update its value.
 env(Identifier, Value, [[Identifier, _] | T], NewEnv) :-
   append([[Identifier, Value]], T, NewEnv).
 
+% Setter
+% Symbol not yet found. Attempt to find and update it which will return
+% an updated tail environment that must be appended to the old head
+% environment.
 env(Identifier, Value, [H | T], NewEnv) :-
   env(Identifier, Value, T, InterimEnv),
   append([H], InterimEnv, NewEnv).
 
-% Evaluate assignment operator.
+%
+% Expression Evaluation Predicates
+%
 
+% Assignment
+% Build the tree node for id into a single string and use it to update
+% that symbol's value using the given right hand expression.
 eval_expr(ea(I, E), Environment, NewEnv) :-
   build_symbol(I, Identifier),
   eval_expr(E, Environment, Value),
   env(Identifier, Value, Environment, NewEnv).
 
 % Evaluate integers.
-
 eval_expr(int(d(D)), D, 10).
 eval_expr(int(d(D), I), R, X) :-
     eval_expr(I, R1, X1),
@@ -243,52 +281,46 @@ eval_expr(int(d(D), I), _, R) :-
     R is X * D + R1.
 
 % Evaluate unary minus (negative integers).
-
 eval_expr(neg(I), Env, R) :-
     eval_expr(I, Env, R1),
     R is R1 * -1.
 
 % Evaluate addition expressions.
-
 eval_expr(ep(E1, E2), Env, R) :-
     eval_expr(E1, Env, R1),
     eval_expr(E2, Env, R2),
     R is R1 + R2.
 
 % Evaluate multiplication expressions.
-
 eval_expr(em(E1, E2), Env, R) :-
     eval_expr(E1, Env, R1),
     eval_expr(E2, Env, R2),
     R is R1 * R2.
 
 % Evaluate subtraction expression.
-
 eval_expr(es(E1, E2), Env, R) :-
     eval_expr(E1, Env, R1),
     eval_expr(E2, Env, R2),
     R is R1 - R2.
 
 % Evaluate division expressions.
-
 eval_expr(ed(E1, E2), Env, R) :-
     eval_expr(E1, Env, R1),
     eval_expr(E2, Env, R2),
-    R is R1 / R2.
+    R is div(R1, R2). % We must use div as / can yield a real number.
 
 % Evaluate modulus expressions.
-
 eval_expr(er(E1, E2), Env, R) :-
     eval_expr(E1, Env, R1),
     eval_expr(E2, Env, R2),
     R is R1 mod R2.
 
-% Evaluate an identifier to a single symbol
-
+% Evaluate an identifier to its value using the provided environment.
 eval_expr(id(L, I), Env, Value) :-
   build_symbol(id(L, I), Identifier),
   env(Identifier, Value, Env).
 
+% Evaluate an identifier to a single symbol
 build_symbol(l(L), Character) :- Character = L.
 build_symbol(id(l(L)), Character) :- Character = L.
 
@@ -298,31 +330,6 @@ build_symbol(id(L, I), R) :-
   string_concat(Head, Tail, R).
 
 % Evaluate the result of an expression.
-
 eval_expr(Tokens, Result) :-
     expression(ParseTree, Tokens, []),
     eval_expr(ParseTree, Result).
-
-% Runner for the interpreter.
-
-%  Evaluate a program given a statement list and an empty environment.
-
-eval(program(SL)) :- eval(SL, []).
-
-% Evaluate S in Environment and produce NewEnv, then excecute the
-% statement list using NewEnv.
-
-eval(sl(S, SL), Environment) :-
-  eval(S, Environment, NewEnv),
-  eval(SL, NewEnv).
-
-% A statement that has only one statement has no meaningful effect on the
-% environment.
-eval(sl(S), Environment) :- eval(S, Environment, _).
-
-% Evaluate a statement.
-
-eval(stmt(Expression), Environment, NewEnv) :-
-  eval_expr(Expression, Environment, NewEnv), write(NewEnv).
-
-eval(expression(E), _, _) :- eval_expr(E, _).
