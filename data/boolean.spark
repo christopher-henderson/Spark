@@ -1,0 +1,3 @@
+a = not false;
+print a;
+print not a;

@@ -12,7 +12,6 @@ source_to_tree(Filename) :-
     atom_chars(Atom, Characters),
     lexer(Tokens, Characters, []),
     program(Tree, Tokens, []),
-    write(Tree), nl,
     eval(Tree).
 
 % ----------------------------------------------------------------------
@@ -21,25 +20,32 @@ source_to_tree(Filename) :-
 
 % Reserved words.
 
+whitespace --> [' '].
+whitespace --> ['\t'].
+whitespace --> ['\n'].
+
 lexer(Tokens) --> ['w', 'h', 'i', 'l', 'e'], lexer(R), {append(['while'], R, Tokens)}.
 lexer(Tokens) --> ['f', 'o', 'r'], lexer(R), {append(['for'], R, Tokens)}.
 lexer(Tokens) --> ['i', 'f'], lexer(R), {append(['if'], R, Tokens)}.
 lexer(Tokens) --> ['e', 'l', 's', 'e'], lexer(R), {append(['else'], R, Tokens)}.
+lexer(Tokens) --> ['p', 'r', 'i', 'n', 't'], lexer(R), {append(['print'], R, Tokens)}.
+lexer(Tokens) --> ['t', 'r', 'u', 'e'], lexer(R), {append(['true'], R, Tokens)}.
+lexer(Tokens) --> ['f', 'a', 'l', 's', 'e'], lexer(R), {append(['false'], R, Tokens)}.
+lexer(Tokens) --> ['a', 'n', 'd'], lexer(R), {append(['and'], R, Tokens)}.
+lexer(Tokens) --> ['o', 'r'], lexer(R), {append(['or'], R, Tokens)}.
+lexer(Tokens) --> ['n', 'o', 't'], lexer(R), {append(['not'], R, Tokens)}.
+lexer(Tokens) --> ['x', 'o', 'r'], lexer(R), {append(['xor'], R, Tokens)}.
 
 % Relational operators.
-
 lexer(Tokens) --> ['<', '='], lexer(R), {append(['<='], R, Tokens)}.
 lexer(Tokens) --> ['>', '='], lexer(R), {append(['>='], R, Tokens)}.
 lexer(Tokens) --> ['=', '='], lexer(R), {append(['=='], R, Tokens)}.
+lexer(Tokens) --> ['!', '='], lexer(R), {append(['!='], R, Tokens)}.
 
 % Whitespace characters.
-
-lexer(Tokens) --> [' '], lexer(R), {Tokens = R}.
-lexer(Tokens) --> ['\t'], lexer(R), {Tokens = R}.
-lexer(Tokens) --> ['\n'], lexer(R), {Tokens = R}.
+lexer(Tokens) --> whitespace, lexer(R), {Tokens = R}.
 
 % Everything else.
-
 lexer(Tokens) --> [C], lexer(R), {Tokens = [C | R]}.
 lexer(Tokens) --> [], {Tokens = []}.
 
@@ -48,7 +54,6 @@ lexer(Tokens) --> [], {Tokens = []}.
 % ----------------------------------------------------------------------
 
 % Digits and letters.
-
 digit(d(0)) --> ['0'].
 digit(d(1)) --> ['1'].
 digit(d(2)) --> ['2'].
@@ -59,6 +64,10 @@ digit(d(6)) --> ['6'].
 digit(d(7)) --> ['7'].
 digit(d(8)) --> ['8'].
 digit(d(9)) --> ['9'].
+
+% Booleans
+boolean(bool('true')) --> ['true'].
+boolean(bool('false')) --> ['false'].
 
 letter(l('a')) --> ['a'].
 letter(l('b')) --> ['b'].
@@ -114,49 +123,68 @@ letter(l('X')) --> ['X'].
 letter(l('Y')) --> ['Y'].
 letter(l('Z')) --> ['Z'].
 
-% Identifiers.
+% Print to stdout.
+print(print(E)) --> ['print'], expression(E).
 
+% Identifiers.
 identifier(id(L, I)) --> letter(L), identifier(I).
 identifier(id(L)) --> letter(L).
 
 % Integers.
-
 integer(int(D, I)) --> digit(D), integer(I).
 integer(int(D)) --> digit(D).
 
 % Expressions.
-
 expression(I) --> identifier(I).
-expression(I) --> integer(I).
-expression(neg(I)) --> ['-'], integer(I).
-expression(ep(I, E)) --> integer(I), ['+'], expression(E).
-expression(em(I, E)) --> integer(I), ['*'], expression(E).
-expression(es(I, E)) --> integer(I), ['-'], expression(E).
-expression(ed(I, E)) --> integer(I), ['/'], expression(E).
-expression(er(I, E)) --> integer(I), ['%'], expression(E).
-expression(ep(I, E)) --> identifier(I), ['+'], expression(E).
-expression(em(I, E)) --> identifier(I), ['*'], expression(E).
-expression(es(I, E)) --> identifier(I), ['-'], expression(E).
-expression(ed(I, E)) --> identifier(I), ['/'], expression(E).
-expression(er(I, E)) --> identifier(I), ['%'], expression(E).
+expression(B) --> boolean_expression(B).
+expression(I) --> integer_expression(I).
+expression(P) --> print(P).
 expression(ea(I, E)) --> identifier(I), ['='], expression(E).
-expression(elt(I, E)) --> integer(I), ['<'], expression(E).
-expression(egt(I, E)) --> integer(I), ['>'], expression(E).
-expression(ele(I, E)) --> integer(I), ['<='], expression(E).
-expression(ege(I, E)) --> integer(I), ['>='], expression(E).
-expression(eeq(I, E)) --> integer(I), ['=='], expression(E).
-expression(elt(I, E)) --> identifier(I), ['<'], expression(E).
-expression(egt(I, E)) --> identifier(I), ['>'], expression(E).
-expression(ele(I, E)) --> identifier(I), ['<='], expression(E).
-expression(ege(I, E)) --> identifier(I), ['>='], expression(E).
-expression(eeq(I, E)) --> identifier(I), ['=='], expression(E).
+
+integer_expression(I) --> integer(I).
+integer_expression(I) --> identifier(I).
+integer_expression(neg(I)) --> ['-'], integer(I).
+integer_expression(ep(I, E)) --> integer(I), ['+'], integer_expression(E).
+integer_expression(em(I, E)) --> integer(I), ['*'], integer_expression(E).
+integer_expression(es(I, E)) --> integer(I), ['-'], integer_expression(E).
+integer_expression(ed(I, E)) --> integer(I), ['/'], integer_expression(E).
+integer_expression(er(I, E)) --> integer(I), ['%'], integer_expression(E).
+integer_expression(ep(I, E)) --> identifier(I), ['+'], integer_expression(E).
+integer_expression(em(I, E)) --> identifier(I), ['*'], integer_expression(E).
+integer_expression(es(I, E)) --> identifier(I), ['-'], integer_expression(E).
+integer_expression(ed(I, E)) --> identifier(I), ['/'], integer_expression(E).
+integer_expression(er(I, E)) --> identifier(I), ['%'], integer_expression(E).
+
+
+boolean_expression(B) --> boolean(B).
+boolean_expression(B) --> identifier(B).
+boolean_expression(elt(I, E)) --> integer(I), ['<'], integer_expression(E).
+boolean_expression(egt(I, E)) --> integer(I), ['>'], integer_expression(E).
+boolean_expression(ele(I, E)) --> integer(I), ['<='], integer_expression(E).
+boolean_expression(ege(I, E)) --> integer(I), ['>='], integer_expression(E).
+boolean_expression(eeq(I, E)) --> integer(I), ['=='], integer_expression(E).
+boolean_expression(enq(I, E)) --> integer(I), ['!='], integer_expression(E).
+boolean_expression(elt(I, E)) --> identifier(I), ['<'], integer_expression(E).
+boolean_expression(egt(I, E)) --> identifier(I), ['>'], integer_expression(E).
+boolean_expression(ele(I, E)) --> identifier(I), ['<='], integer_expression(E).
+boolean_expression(ege(I, E)) --> identifier(I), ['>='], integer_expression(E).
+boolean_expression(eeq(I, E)) --> identifier(I), ['=='], integer_expression(E).
+boolean_expression(enq(I, E)) --> identifier(I), ['!='], integer_expression(E).
+
+boolean_expression(ebc(B, E)) --> boolean(B), ['and'], boolean_expression(E).
+boolean_expression(ebd(B, E)) --> boolean(B), ['or'], boolean_expression(E).
+boolean_expression(ebx(B, E)) --> boolean(B), ['xor'], boolean_expression(E).
+boolean_expression(ebn(E)) --> ['not'], boolean_expression(E).
+
+% boolean_expression(ebc(B, E)) --> boolean(B), ['and'], boolean_expressio(E).
+% boolean_expression(ebd(B, E)) --> boolean(B), ['or'], boolean_expressio(E).
+% boolean_expression(ebx(B, E)) --> boolean(B), ['xor'], boolean_expressio(E).
+% boolean_expression(ebn(E)) --> ['not'], boolean_expressio(E).
 
 % All expressions terminated by a semicolon are statements.
-
 statement(stmt(E)) --> expression(E), [';'].
 
 % 'for' loop statement.
-
 statement(for(Init, Cond, Inc, SL)) -->
     ['for'], ['('],
     expression(Init),
@@ -169,7 +197,6 @@ statement(for(Init, Cond, Inc, SL)) -->
     ['}'].
 
 % 'while' loop statement.
-
 statement(while(E, SL)) -->
     ['while'], ['('],
     expression(E),
@@ -178,7 +205,6 @@ statement(while(E, SL)) -->
     ['}'].
 
 % 'if' and 'else-if' conditional statements.
-
 statement(if(Cond, SL)) -->
     ['if'], ['('],
     expression(Cond),
@@ -223,7 +249,7 @@ eval(sl(S), Environment) :- eval(S, Environment, _).
 
 % Evaluate a single statement in an environment.
 eval(stmt(Expression), Environment, NewEnv) :-
-  eval_expr(Expression, Environment, NewEnv), write(NewEnv), nl.
+  eval_expr(Expression, Environment, NewEnv).
 
 % Evaluating an expression in isolation has no side effects.
 eval(expression(E), _, _) :- eval_expr(E, _).
@@ -315,9 +341,94 @@ eval_expr(er(E1, E2), Env, R) :-
     eval_expr(E2, Env, R2),
     R is R1 mod R2.
 
+% Evalute boolean expressions.
+eval_expr(bool(B), _, B).
+
+% Conjunction.
+eval_expr(ebc(bool('true'), bool('true')), _, bool('true')).
+eval_expr(ebc(bool('true'), bool('false')), _, bool('false')).
+eval_expr(ebc(bool('false'), bool('true')), _, bool('false')).
+eval_expr(ebc(bool('false'), bool('false')), _, bool('false')).
+
+% Disjunction.
+eval_expr(ebd(bool('false'), bool('false')), _, bool('false')).
+eval_expr(ebd(bool('false'), bool('true')), _, bool('true')).
+eval_expr(ebd(bool('true'), bool('false')), _, bool('true')).
+eval_expr(ebd(bool('true'), bool('true')), _, bool('true')).
+
+% Negation.
+eval_expr(ebn(bool('true')), _, 'false').
+eval_expr(ebn(bool('false')), _, 'true').
+
+% Exclusive Disjunction.
+eval_expr(ebx(bool('false'), bool('false')), _, bool('false')).
+eval_expr(ebx(bool('false'), bool('true')), _, bool('true')).
+eval_expr(ebx(bool('true'), bool('false')), _, bool('true')).
+eval_expr(ebx(bool('true'), bool('true')), _, bool('false')).
+
+% Less than.
+eval_expr(elt(I, E), Env, bool('true')) :-
+  eval_expr(I, Env, R1),
+  eval_expr(E, Env, R2),
+  R1 < R2.
+eval_expr(elt(I, E), Env, bool('false')) :-
+  eval_expr(I, Env, R1),
+  eval_expr(E, Env, R2),
+  R1 >= R2.
+
+% Less than or equal.
+eval_expr(ele(I, E), Env, bool('true')) :-
+  eval_expr(I, Env, R1),
+  eval_expr(E, Env, R2),
+  R1 =< R2.
+eval_expr(ele(I, E), Env, bool('false')) :-
+  eval_expr(I, Env, R1),
+  eval_expr(E, Env, R2),
+  R1 > R2.
+
+% Greater than.
+eval_expr(egt(I, E), Env, bool('true')) :-
+  eval_expr(I, Env, R1),
+  eval_expr(E, Env, R2),
+  R1 > R2.
+eval_expr(egt(I, E), Env, bool('false')) :-
+  eval_expr(I, Env, R1),
+  eval_expr(E, Env, R2),
+  R1 =< R2.
+
+% Greater than or equal.
+eval_expr(ege(I, E), Env, bool('true')) :-
+  eval_expr(I, Env, R1),
+  eval_expr(E, Env, R2),
+  R1 >= R2.
+eval_expr(ege(I, E), Env, bool('false')) :-
+  eval_expr(I, Env, R1),
+  eval_expr(E, Env, R2),
+  R1 < R2.
+
+% Equal.
+eval_expr(eeq(I, E), Env, bool('true')) :-
+  eval_expr(I, Env, R1),
+  eval_expr(E, Env, R2),
+  R1 == R2.
+eval_expr(eeq(I, E), Env, bool('false')) :-
+  eval_expr(I, Env, R1),
+  eval_expr(E, Env, R2),
+  R1 \= R2.
+
+% Not equal.
+eval_expr(enq(I, E), Env, bool('true')) :-
+  eval_expr(I, Env, R1),
+  eval_expr(E, Env, R2),
+  R1 \= R2.
+eval_expr(enq(I, E), Env, bool('false')) :-
+  eval_expr(I, Env, R1),
+  eval_expr(E, Env, R2),
+  R1 == R2.
+
 % Evaluate an identifier to its value using the provided environment.
-eval_expr(id(L, I), Env, Value) :-
-  build_symbol(id(L, I), Identifier),
+eval_expr(id(I), Env, Value) :-
+  build_symbol(id(I), Identifier),
   env(Identifier, Value, Env).
 
 % Evaluate an identifier to a single symbol
@@ -328,6 +439,11 @@ build_symbol(id(L, I), R) :-
   build_symbol(L, Head),
   build_symbol(I, Tail),
   string_concat(Head, Tail, R).
+
+% Print.
+eval_expr(print(E), Env, _) :-
+  eval_expr(E, Env, R),
+  write(R), nl.
 
 % Evaluate the result of an expression.
 eval_expr(Tokens, Result) :-
