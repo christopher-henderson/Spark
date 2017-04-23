@@ -1,3 +1,52 @@
-a = not false;
-print a;
+print true and true;
+print true and false;
+print false and true;
+print false and false;
+
+print true or true;
+print true or false;
+print false or true;
+print false or false;
+
+print not true;
+print not false;
+
+print true xor true;
+print true xor false;
+print false xor true;
+print false xor false;
+
+a = true;
+b = false;
+
+print a and a;
+print a and b;
+print b and a;
+print b and b;
+
+print a or a;
+print a or b;
+print b or a;
+print b or b;
+
 print not a;
+print not b;
+
+print a xor a;
+print a xor b;
+print b xor a;
+print b xor b;
+
+print a == true;
+print a != true;
+print not a == true;
+print not a == false;
+print b == false;
+print b != false;
+print not b == false;
+print not b == true;
+
+print a and b or a;
+print a and b or b;
+print a or b and b;
+print b or b and a;

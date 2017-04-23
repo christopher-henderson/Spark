@@ -12,6 +12,7 @@ source_to_tree(Filename) :-
     atom_chars(Atom, Characters),
     lexer(Tokens, Characters, []),
     program(Tree, Tokens, []),
+    % write(Tree), nl,
     eval(Tree).
 
 % ----------------------------------------------------------------------
@@ -171,15 +172,19 @@ boolean_expression(ege(I, E)) --> identifier(I), ['>='], integer_expression(E).
 boolean_expression(eeq(I, E)) --> identifier(I), ['=='], integer_expression(E).
 boolean_expression(enq(I, E)) --> identifier(I), ['!='], integer_expression(E).
 
+boolean_expression(eeq(B, E)) --> boolean(B), ['=='], boolean_expression(E).
+boolean_expression(enq(B, E)) --> boolean(B), ['!='], boolean_expression(E).
 boolean_expression(ebc(B, E)) --> boolean(B), ['and'], boolean_expression(E).
 boolean_expression(ebd(B, E)) --> boolean(B), ['or'], boolean_expression(E).
 boolean_expression(ebx(B, E)) --> boolean(B), ['xor'], boolean_expression(E).
 boolean_expression(ebn(E)) --> ['not'], boolean_expression(E).
 
-% boolean_expression(ebc(B, E)) --> boolean(B), ['and'], boolean_expressio(E).
-% boolean_expression(ebd(B, E)) --> boolean(B), ['or'], boolean_expressio(E).
-% boolean_expression(ebx(B, E)) --> boolean(B), ['xor'], boolean_expressio(E).
-% boolean_expression(ebn(E)) --> ['not'], boolean_expressio(E).
+boolean_expression(eeq(B, E)) --> identifier(B), ['=='], boolean_expression(E).
+boolean_expression(enq(B, E)) --> identifier(B), ['!='], boolean_expression(E).
+boolean_expression(ebc(B, E)) --> identifier(B), ['and'], boolean_expression(E).
+boolean_expression(ebd(B, E)) --> identifier(B), ['or'], boolean_expression(E).
+boolean_expression(ebx(B, E)) --> identifier(B), ['xor'], boolean_expression(E).
+boolean_expression(ebn(E)) --> ['not'], identifier(E).
 
 % All expressions terminated by a semicolon are statements.
 statement(stmt(E)) --> expression(E), [';'].
@@ -342,29 +347,44 @@ eval_expr(er(E1, E2), Env, R) :-
     R is R1 mod R2.
 
 % Evalute boolean expressions.
-eval_expr(bool(B), _, B).
+eval_expr(bool(B), _, bool(B)).
 
 % Conjunction.
 eval_expr(ebc(bool('true'), bool('true')), _, bool('true')).
 eval_expr(ebc(bool('true'), bool('false')), _, bool('false')).
 eval_expr(ebc(bool('false'), bool('true')), _, bool('false')).
 eval_expr(ebc(bool('false'), bool('false')), _, bool('false')).
+eval_expr(ebc(E1, E2), Env, B) :-
+  eval_expr(E1, Env, R1),
+  eval_expr(E2, Env, R2),
+  eval_expr(ebc(R1, R2), Env, B).
 
 % Disjunction.
 eval_expr(ebd(bool('false'), bool('false')), _, bool('false')).
 eval_expr(ebd(bool('false'), bool('true')), _, bool('true')).
 eval_expr(ebd(bool('true'), bool('false')), _, bool('true')).
 eval_expr(ebd(bool('true'), bool('true')), _, bool('true')).
+eval_expr(ebd(E1, E2), Env, B) :-
+  eval_expr(E1, Env, R1),
+  eval_expr(E2, Env, R2),
+  eval_expr(ebd(R1, R2), Env, B).
 
 % Negation.
-eval_expr(ebn(bool('true')), _, 'false').
-eval_expr(ebn(bool('false')), _, 'true').
+eval_expr(ebn(bool('true')), _, bool('false')).
+eval_expr(ebn(bool('false')), _, bool('true')).
+eval_expr(ebn(E), Env, B) :-
+  eval_expr(E, Env, R),
+  eval_expr(ebn(R), Env, B).
 
 % Exclusive Disjunction.
 eval_expr(ebx(bool('false'), bool('false')), _, bool('false')).
 eval_expr(ebx(bool('false'), bool('true')), _, bool('true')).
 eval_expr(ebx(bool('true'), bool('false')), _, bool('true')).
 eval_expr(ebx(bool('true'), bool('true')), _, bool('false')).
+eval_expr(ebx(E1, E2), Env, B) :-
+  eval_expr(E1, Env, R1),
+  eval_expr(E2, Env, R2),
+  eval_expr(ebx(R1, R2), Env, B).
 
 % Less than.
 eval_expr(elt(I, E), Env, bool('true')) :-
@@ -441,11 +461,11 @@ build_symbol(id(L, I), R) :-
   string_concat(Head, Tail, R).
 
 % Print.
-eval_expr(print(E), Env, _) :-
+eval_expr(print(E), Env, Env) :-
   eval_expr(E, Env, R),
   write(R), nl.
 
-% Evaluate the result of an expression.
-eval_expr(Tokens, Result) :-
-    expression(ParseTree, Tokens, []),
-    eval_expr(ParseTree, Result).
+% % Evaluate the result of an expression.
+% eval_expr(Tokens, Result) :-
+%     expression(ParseTree, Tokens, []),
+%     eval_expr(ParseTree, Result).
