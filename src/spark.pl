@@ -12,7 +12,7 @@ source_to_tree(Filename) :-
     atom_chars(Atom, Characters),
     lexer(Tokens, Characters, []),
     program(Tree, Tokens, []),
-    % write(Tree), nl,
+    write(Tree), nl,
     eval(Tree).
 
 % ----------------------------------------------------------------------
@@ -447,8 +447,8 @@ eval_expr(enq(I, E), Env, bool('false')) :-
   R1 == R2.
 
 % Evaluate an identifier to its value using the provided environment.
-eval_expr(id(I), Env, Value) :-
-  build_symbol(id(I), Identifier),
+eval_expr(I, Env, Value) :-
+  build_symbol(I, Identifier),
   env(Identifier, Value, Env).
 
 % Evaluate an identifier to a single symbol
@@ -464,8 +464,3 @@ build_symbol(id(L, I), R) :-
 eval_expr(print(E), Env, Env) :-
   eval_expr(E, Env, R),
   write(R), nl.
-
-% % Evaluate the result of an expression.
-% eval_expr(Tokens, Result) :-
-%     expression(ParseTree, Tokens, []),
-%     eval_expr(ParseTree, Result).
