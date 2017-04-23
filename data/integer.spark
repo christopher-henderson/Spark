@@ -1,2 +1,74 @@
-1;
 print 1;
+print 1 + 1;
+print 1 - 1;
+print 1 * 1;
+print 1 / 1;
+
+print -1;
+print 1 + -1;
+print 1 - -1;
+print 1 * -1;
+print 1 / -1;
+
+print 10;
+print 10 + 10;
+print 10 - 10;
+print 10 * 10;
+print 10 / 10;
+
+print -10;
+print 10 + -10;
+print 10 - -10;
+print 10 * -10;
+print 10 / -10;
+
+one = 1;
+ten = 10;
+
+print one;
+print one + one;
+print one - one;
+print one * one;
+print one / one;
+
+print -one;
+print one + -one;
+print one - -one;
+print one * -one;
+print one / -one;
+
+print ten;
+print ten + ten;
+print ten - ten;
+print ten * ten;
+print ten / ten;
+
+print ten;
+print ten + -ten;
+print ten - -ten;
+print ten * -ten;
+print ten / -ten;
+
+print 1 < 10;
+print 1 > 10;
+print 1 <= 10;
+print 1 >= 10;
+print 1 == 10;
+
+print 1 < -10;
+print 1 > -10;
+print 1 <= -10;
+print 1 >= -10;
+print 1 == -10;
+
+print one < ten;
+print one > ten;
+print one <= ten;
+print one >= ten;
+print one == ten;
+
+print one < -ten;
+print one > -ten;
+print one <= -ten;
+print one >= -ten;
+print one == -ten;

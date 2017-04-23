@@ -12,7 +12,6 @@ source_to_tree(Filename) :-
     atom_chars(Atom, Characters),
     lexer(Tokens, Characters, []),
     program(Tree, Tokens, []),
-    write(Tree), nl,
     eval(Tree).
 
 % ----------------------------------------------------------------------
@@ -145,6 +144,7 @@ expression(ea(I, E)) --> identifier(I), ['='], expression(E).
 integer_expression(I) --> integer(I).
 integer_expression(I) --> identifier(I).
 integer_expression(neg(I)) --> ['-'], integer(I).
+integer_expression(neg(I)) --> ['-'], identifier(I).
 integer_expression(ep(I, E)) --> integer(I), ['+'], integer_expression(E).
 integer_expression(em(I, E)) --> integer(I), ['*'], integer_expression(E).
 integer_expression(es(I, E)) --> integer(I), ['-'], integer_expression(E).
@@ -300,16 +300,15 @@ eval_expr(ea(I, E), Environment, NewEnv) :-
   env(Identifier, Value, Environment, NewEnv).
 
 % Evaluate integers.
-eval_expr(int(d(D)), D, 10).
-eval_expr(int(d(D), I), R, X) :-
-    eval_expr(I, R1, X1),
-    X is X1 * 10,
-    R is X1 * D + R1.
-
 eval_expr(int(d(D)), _, D).
-eval_expr(int(d(D), I), _, R) :-
-    eval_expr(I, R1, X),
-    R is X * D + R1.
+eval_expr(int(D, I), _, R) :-
+  build_integer(int(D, I), R).
+
+build_integer(int(d(D)), D).
+build_integer(int(d(D), I), R) :-
+  build_integer(I, I1),
+  atom_length(I1, Length),
+  R is D * 10 ** Length + I1.
 
 % Evaluate unary minus (negative integers).
 eval_expr(neg(I), Env, R) :-
