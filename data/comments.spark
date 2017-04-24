@@ -1,0 +1,23 @@
+/*
+/*
+//
+* /
+*/
+
+// This is a single-line comment.
+foo = 10;
+bar = 20;
+
+if (foo < bar)
+{
+    /*
+     * This is a multiline comment.
+     * It can span multiple lines.
+     */
+
+    // Output value of foo.
+    print foo;
+}
+
+// Output value of bar.
+print bar;
