@@ -140,6 +140,7 @@ expression(B) --> boolean_expression(B).
 expression(I) --> integer_expression(I).
 expression(P) --> print(P).
 expression(I) --> branch(I).
+expression(I) --> loop(I).
 expression(ea(I, E)) --> identifier(I), ['='], expression(E).
 
 integer_expression(I) --> integer(I).
@@ -189,26 +190,7 @@ boolean_expression(ebn(E)) --> ['not'], identifier(E).
 % All expressions terminated by a semicolon are statements.
 statement(stmt(E)) --> expression(E), [';'].
 statement(stmt(E)) --> branch(E).
-
-% 'for' loop statement.
-statement(for(Init, Cond, Inc, SL)) -->
-    ['for'], ['('],
-    expression(Init),
-    [';'],
-    expression(Cond),
-    [';'],
-    expression(Inc),
-    [')'], ['{'],
-    statement_list(SL),
-    ['}'].
-
-% 'while' loop statement.
-statement(while(E, SL)) -->
-    ['while'], ['('],
-    expression(E),
-    [')'], ['{'],
-    statement_list(SL),
-    ['}'].
+statement(stmt(E)) --> loop(E).
 
 % If
 branch(if(Cond, SL)) -->
@@ -248,6 +230,11 @@ branch(elseif(Cond, SL, SL2)) -->
     statement_list(SL),
   ['}'], ['else'], ['{'],
     statement_list(SL2),
+  ['}'].
+
+loop(while(Cond, SL)) -->
+  ['while'], ['('], boolean_expression(Cond), [')'], ['{'],
+    statement_list(SL),
   ['}'].
 
 statement_list(sl(S)) --> statement(S).
@@ -511,3 +498,13 @@ eval_expr(elseif(Cond, _), Env, Env) :-
 eval_expr(elseif(Cond, _, Else), Env, NewEnv) :-
   eval_expr(Cond, Env, bool('false')),
   eval(Else, Env, NewEnv).
+
+% While loop is true
+eval_expr(while(Cond, SL), Env, NewEnv) :-
+  eval_expr(Cond, Env, bool('true')),
+  eval(SL, Env, InterimEnv),
+  eval_expr(while(Cond, SL), InterimEnv, NewEnv).
+
+% While loop is false
+eval_expr(while(Cond, _), Env, Env) :-
+  eval_expr(Cond, Env, bool('false')).
