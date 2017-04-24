@@ -14,7 +14,7 @@ source_to_tree(Filename) :-
     atom_chars(Atom, Characters),
     lexer(Tokens, Characters, []),
     program(Tree, Tokens, []),
-    write(Tree), nl,
+    % write(Tree), nl,
     eval(Tree).
 
 % ----------------------------------------------------------------------
@@ -516,6 +516,16 @@ eval_expr(if(Cond, _, Else), Env, NewEnv) :-
   eval_expr(Cond, Env, bool('false')),
   eval(Else, Env, NewEnv).
 
-% Else
-eval_expr(else(SL), Env, NewEnv) :-
+% If false else if
+eval_expr(if(Cond, _, ElseIf), Env, NewEnv) :-
+  eval_expr(Cond, Env, bool('false')),
+  eval_expr(ElseIf, Env, NewEnv).
+
+% Else If false
+eval_expr(elseif(Cond, SL), Env, NewEnv) :-
+  eval_expr(Cond, Env, bool('true')),
   eval(SL, Env, NewEnv).
+
+% Else if false
+eval_expr(elseif(Cond, _), Env, Env) :-
+  eval_expr(Cond, Env, bool('false')).
