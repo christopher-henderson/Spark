@@ -191,6 +191,7 @@ boolean_expression(ebn(E)) --> ['not'], identifier(E).
 statement(stmt(E)) --> expression(E), [';'].
 statement(stmt(E)) --> branch(E).
 statement(stmt(E)) --> loop(E).
+statement(stmt(E)) --> expression(E).
 
 % If
 branch(if(Cond, SL)) -->
@@ -234,6 +235,11 @@ branch(elseif(Cond, SL, SL2)) -->
 
 loop(while(Cond, SL)) -->
   ['while'], ['('], boolean_expression(Cond), [')'], ['{'],
+  statement_list(SL),
+  ['}'].
+
+loop(for(Initializer, Cond, Increment, SL)) -->
+  ['for'], ['('], statement(Initializer), [';'], boolean_expression(Cond), [';'], statement(Increment), [')'], ['{'],
     statement_list(SL),
   ['}'].
 
@@ -507,4 +513,29 @@ eval_expr(while(Cond, SL), Env, NewEnv) :-
 
 % While loop is false
 eval_expr(while(Cond, _), Env, Env) :-
+  eval_expr(Cond, Env, bool('false')).
+
+% For loop, first pass succedes conditional.
+eval_expr(for(Initializer, Cond, Increment, SL), Env, NewEnv) :-
+  eval(Initializer, Env, Env1),
+  eval_expr(Cond, Env1, bool('true')),
+  eval(SL, Env1, Env2),
+  eval(Increment, Env2, Env3),
+  eval_expr(for(Cond, Increment, SL), Env3, NewEnv).
+
+% For loop, first pass fails conditional.
+eval_expr(for(Initializer, Cond, _, _), Env, NewEnv) :-
+  eval(Initializer, Env, InitializedEnv),
+  eval_expr(Cond, InitializedEnv, bool('false')),
+  NewEnv = InitializedEnv.
+
+% For loop, after first pass success.
+eval_expr(for(Cond, Increment, SL), Env, NewEnv) :-
+  eval_expr(Cond, Env, bool('true')),
+  eval(SL, Env, Env1),
+  eval(Increment, Env1, Env2),
+  eval_expr(for(Cond, Increment, SL), Env2, NewEnv).
+
+% For loop, after first pass fails.
+eval_expr(for(Cond, _, _), Env, Env) :-
   eval_expr(Cond, Env, bool('false')).
