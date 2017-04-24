@@ -1,5 +1,7 @@
 :- discontiguous eval_expr/3.
 :- discontiguous eval_expr/2.
+:- discontiguous eval/2.
+:- discontiguous eval/3.
 
 % Reads in a Spark source file and outputs the parse tree.
 %
@@ -12,6 +14,7 @@ source_to_tree(Filename) :-
     atom_chars(Atom, Characters),
     lexer(Tokens, Characters, []),
     program(Tree, Tokens, []),
+    % write(Tree), nl,
     eval(Tree).
 
 % ----------------------------------------------------------------------
@@ -139,6 +142,7 @@ expression(I) --> identifier(I).
 expression(B) --> boolean_expression(B).
 expression(I) --> integer_expression(I).
 expression(P) --> print(P).
+expression(I) --> branch(I).
 expression(ea(I, E)) --> identifier(I), ['='], expression(E).
 
 integer_expression(I) --> integer(I).
@@ -188,6 +192,7 @@ boolean_expression(ebn(E)) --> ['not'], identifier(E).
 
 % All expressions terminated by a semicolon are statements.
 statement(stmt(E)) --> expression(E), [';'].
+statement(stmt(E)) --> branch(E).
 
 % 'for' loop statement.
 statement(for(Init, Cond, Inc, SL)) -->
@@ -209,22 +214,47 @@ statement(while(E, SL)) -->
     statement_list(SL),
     ['}'].
 
-% 'if' and 'else-if' conditional statements.
-statement(if(Cond, SL)) -->
-    ['if'], ['('],
-    expression(Cond),
-    [')'], ['{'],
-    statement_list(SL),
+% If
+branch(if(Cond, SL)) -->
+    ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
+      statement_list(SL),
     ['}'].
 
-statement(if(Cond, SL1, SL2)) -->
-    ['if'], ['('],
-    expression(Cond),
-    [')'], ['{'],
-    statement_list(SL1),
-    ['}'], ['else'], ['{'],
-    statement_list(SL2).
-    ['}'].
+% Else
+branch(else(SL)) -->
+  ['else'], ['{'],
+    statement_list(SL),
+  ['}'].
+
+% If-Else
+branch(if(Cond, SL, Else)) -->
+    ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
+      statement_list(SL),
+    ['}'], branch(Else).
+
+% If-ElseIf
+branch(if(Cond, SL, ElseIf)) -->
+    ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
+      statement_list(SL),
+    ['}'], branch(ElseIf).
+
+% ElseIf
+branch(elseif(Cond, SL)) -->
+  ['else'], ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
+    statement_list(SL),
+  ['}'].
+
+% ElseIf-ElseIf
+branch(elseif(Cond, SL, ElseIf)) -->
+  ['else'], ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
+    statement_list(SL),
+  ['}'], branch(ElseIf).
+
+% ElseIf-Else
+branch(elseif(Cond, SL, Else)) -->
+  ['else'], ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
+    statement_list(SL),
+  ['}'], branch(Else).
 
 statement_list(sl(S)) --> statement(S).
 statement_list(sl(S, SL)) --> statement(S), statement_list(SL).
@@ -247,6 +277,13 @@ eval(program(SL)) :- eval(SL, []).
 eval(sl(S, SL), Environment) :-
   eval(S, Environment, NewEnv),
   eval(SL, NewEnv).
+
+eval(sl(S, SL), Environment, NewEnv) :-
+  eval(S, Environment, InterimEnv),
+  eval(SL, InterimEnv, NewEnv).
+
+eval(sl(S), Environment, NewEnv) :-
+  eval(S, Environment, NewEnv).
 
 % A statement that has only one statement has no meaningful effect on the
 % environment.
@@ -463,3 +500,14 @@ build_symbol(id(L, I), R) :-
 eval_expr(print(E), Env, Env) :-
   eval_expr(E, Env, R),
   write(R), nl.
+
+% If true
+eval_expr(if(Cond, SL), Env, NewEnv) :-
+  eval_expr(Cond, Env, bool('true')),
+  eval(SL, Env, NewEnv).
+
+% If false
+eval_expr(if(Cond, _), Env, Env) :-
+  eval_expr(Cond, Env, bool('false')).
+
+% If true else
