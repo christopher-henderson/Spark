@@ -21,23 +21,25 @@ source_to_tree(Filename) :-
 %   LEXER
 % ----------------------------------------------------------------------
 
-% Reserved words.
-
+% Whitespace characters.
 whitespace --> [' '].
 whitespace --> ['\t'].
 whitespace --> ['\n'].
 
-lexer(Tokens) --> ['w', 'h', 'i', 'l', 'e'], lexer(R), {append(['while'], R, Tokens)}.
-lexer(Tokens) --> ['f', 'o', 'r'], lexer(R), {append(['for'], R, Tokens)}.
-lexer(Tokens) --> ['i', 'f'], lexer(R), {append(['if'], R, Tokens)}.
-lexer(Tokens) --> ['e', 'l', 's', 'e'], lexer(R), {append(['else'], R, Tokens)}.
-lexer(Tokens) --> ['p', 'r', 'i', 'n', 't'], lexer(R), {append(['print'], R, Tokens)}.
-lexer(Tokens) --> ['t', 'r', 'u', 'e'], lexer(R), {append(['true'], R, Tokens)}.
-lexer(Tokens) --> ['f', 'a', 'l', 's', 'e'], lexer(R), {append(['false'], R, Tokens)}.
-lexer(Tokens) --> ['a', 'n', 'd'], lexer(R), {append(['and'], R, Tokens)}.
-lexer(Tokens) --> ['o', 'r'], lexer(R), {append(['or'], R, Tokens)}.
-lexer(Tokens) --> ['n', 'o', 't'], lexer(R), {append(['not'], R, Tokens)}.
-lexer(Tokens) --> ['x', 'o', 'r'], lexer(R), {append(['xor'], R, Tokens)}.
+% The longest_match_alpha/3 predicate unifies with the longest string of
+% uppercase or lowercase letters.
+longest_match_alpha([H|T]) --> [H], longest_match_alpha_(T), {char_type(H, alpha)}.
+longest_match_alpha_([H|T]) --> [H], longest_match_alpha_(T), {char_type(H, alpha)}.
+longest_match_alpha_([]) --> [].
+
+% The longest_match_int/3 predicate unifies with the longest string of digits.
+longest_match_int([H|T]) --> [H], longest_match_int_(T), {char_type(H, digit)}.
+longest_match_int_([H|T]) --> [H], longest_match_int_(T), {char_type(H, digit)}.
+longest_match_int_([]) --> [].
+
+% Identifiers and integer literals.
+lexer(Tokens) --> longest_match_alpha(I), lexer(R), {atom_chars(IA, I), append([IA], R, Tokens)}.
+lexer(Tokens) --> longest_match_int(I), lexer(R), {atom_chars(IA, I), append([IA], R, Tokens)}.
 
 % Relational operators.
 lexer(Tokens) --> ['<', '='], lexer(R), {append(['<='], R, Tokens)}.
@@ -56,86 +58,48 @@ lexer(Tokens) --> [], {Tokens = []}.
 %   PARSER
 % ----------------------------------------------------------------------
 
-% Digits and letters.
-digit(d(0)) --> ['0'].
-digit(d(1)) --> ['1'].
-digit(d(2)) --> ['2'].
-digit(d(3)) --> ['3'].
-digit(d(4)) --> ['4'].
-digit(d(5)) --> ['5'].
-digit(d(6)) --> ['6'].
-digit(d(7)) --> ['7'].
-digit(d(8)) --> ['8'].
-digit(d(9)) --> ['9'].
+% Reserved words.
+reserved_words(L) :- L = [
+    while,
+    for,
+    if,
+    else,
+    print,
+    true,
+    false,
+    and,
+    or,
+    not,
+    xor
+].
 
-% Booleans
+% Identifiers.
+% All atom tokens that are composed entirely of lowercase and uppercase
+% letters that are not reserved words are parsed as identifiers.
+identifier(id(I)) -->
+    [I],
+    {
+        atom_chars(I, C),
+        all_letters(C),
+        reserved_words(RW),
+        \+ member(I, RW)
+    }.
+all_letters([H|T]) :- char_type(H, alpha), all_letters(T).
+all_letters([]).
+
+% Integers.
+% All atom tokens that are composed entirely of digit characters are
+% parsed as integers.
+integer(int(I)) --> [I], {atom_chars(I, C), all_digits(C)}.
+all_digits([H|T]) :- char_type(H, digit), all_digits(T).
+all_digits([]).
+
+% Booleans.
 boolean(bool('true')) --> ['true'].
 boolean(bool('false')) --> ['false'].
 
-letter(l('a')) --> ['a'].
-letter(l('b')) --> ['b'].
-letter(l('c')) --> ['c'].
-letter(l('d')) --> ['d'].
-letter(l('e')) --> ['e'].
-letter(l('f')) --> ['f'].
-letter(l('g')) --> ['g'].
-letter(l('h')) --> ['h'].
-letter(l('i')) --> ['i'].
-letter(l('j')) --> ['j'].
-letter(l('k')) --> ['k'].
-letter(l('l')) --> ['l'].
-letter(l('m')) --> ['m'].
-letter(l('n')) --> ['n'].
-letter(l('o')) --> ['o'].
-letter(l('p')) --> ['p'].
-letter(l('q')) --> ['q'].
-letter(l('r')) --> ['r'].
-letter(l('s')) --> ['s'].
-letter(l('t')) --> ['t'].
-letter(l('u')) --> ['u'].
-letter(l('v')) --> ['v'].
-letter(l('w')) --> ['w'].
-letter(l('x')) --> ['x'].
-letter(l('y')) --> ['y'].
-letter(l('z')) --> ['z'].
-
-letter(l('A')) --> ['A'].
-letter(l('B')) --> ['B'].
-letter(l('C')) --> ['C'].
-letter(l('D')) --> ['D'].
-letter(l('E')) --> ['E'].
-letter(l('F')) --> ['F'].
-letter(l('G')) --> ['G'].
-letter(l('H')) --> ['H'].
-letter(l('I')) --> ['I'].
-letter(l('J')) --> ['J'].
-letter(l('K')) --> ['K'].
-letter(l('L')) --> ['L'].
-letter(l('M')) --> ['M'].
-letter(l('N')) --> ['N'].
-letter(l('O')) --> ['O'].
-letter(l('P')) --> ['P'].
-letter(l('Q')) --> ['Q'].
-letter(l('R')) --> ['R'].
-letter(l('S')) --> ['S'].
-letter(l('T')) --> ['T'].
-letter(l('U')) --> ['U'].
-letter(l('V')) --> ['V'].
-letter(l('W')) --> ['W'].
-letter(l('X')) --> ['X'].
-letter(l('Y')) --> ['Y'].
-letter(l('Z')) --> ['Z'].
-
 % Print to stdout.
 print(print(E)) --> ['print'], expression(E).
-
-% Identifiers.
-identifier(id(L, I)) --> letter(L), identifier(I).
-identifier(id(L)) --> letter(L).
-
-% Integers.
-integer(int(D, I)) --> digit(D), integer(I).
-integer(int(D)) --> digit(D).
 
 % Expressions.
 expression(I) --> identifier(I).
@@ -159,7 +123,6 @@ integer_expression(em(I, E)) --> identifier(I), ['*'], integer_expression(E).
 integer_expression(es(I, E)) --> identifier(I), ['-'], integer_expression(E).
 integer_expression(ed(I, E)) --> identifier(I), ['/'], integer_expression(E).
 integer_expression(er(I, E)) --> identifier(I), ['%'], integer_expression(E).
-
 
 boolean_expression(B) --> boolean(B).
 boolean_expression(B) --> identifier(B).
@@ -256,7 +219,7 @@ branch(elseif(Cond, SL, SL2)) -->
 
 statement_list(sl(S)) --> statement(S).
 statement_list(sl(S, SL)) --> statement(S), statement_list(SL).
-program(program(SL)) --> statement_list(SL).
+parser(program(SL)) --> statement_list(SL).
 
 % ----------------------------------------------------------------------
 %   INTERPRETER
@@ -327,15 +290,8 @@ eval_expr(ea(I, E), Environment, NewEnv) :-
   env(Identifier, Value, Environment, NewEnv).
 
 % Evaluate integers.
-eval_expr(int(d(D)), _, D).
-eval_expr(int(D, I), _, R) :-
-  build_integer(int(D, I), R).
-
-build_integer(int(d(D)), D).
-build_integer(int(d(D), I), R) :-
-  build_integer(I, I1),
-  atom_length(I1, Length),
-  R is D * 10 ** Length + I1.
+eval_expr(int(I), _, R) :-
+    atom_number(I, R).
 
 % Evaluate unary minus (negative integers).
 eval_expr(neg(I), Env, R) :-
@@ -478,13 +434,7 @@ eval_expr(I, Env, Value) :-
   env(Identifier, Value, Env).
 
 % Evaluate an identifier to a single symbol
-build_symbol(l(L), Character) :- Character = L.
-build_symbol(id(l(L)), Character) :- Character = L.
-
-build_symbol(id(L, I), R) :-
-  build_symbol(L, Head),
-  build_symbol(I, Tail),
-  string_concat(Head, Tail, R).
+build_symbol(id(I), I).
 
 % Print.
 eval_expr(print(E), Env, Env) :-
