@@ -1,5 +1,5 @@
 a = 0;
-if (1 > 0) {
+if (1 < 0) {
   print a;
   print 2;
   a = a + 1;
