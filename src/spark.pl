@@ -27,7 +27,7 @@ run(Filename) :-
     % Tokenize, parse, and evaluate.
     lexer(Tokens, Characters, []), !,
     parser(Tree, Tokens, []), !,
-    eval(Tree).
+    eval(Tree), !.
 
 % ----------------------------------------------------------------------
 %   LEXER
