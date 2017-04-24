@@ -247,10 +247,12 @@ branch(elseif(Cond, SL, ElseIf)) -->
   ['}'], branch(ElseIf).
 
 % ElseIf-Else
-branch(elseif(Cond, SL, Else)) -->
+branch(elseif(Cond, SL, SL2)) -->
   ['else'], ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
     statement_list(SL),
-  ['}'], branch(Else).
+  ['}'], ['else'], ['{'],
+    statement_list(SL2),
+  ['}'].
 
 statement_list(sl(S)) --> statement(S).
 statement_list(sl(S, SL)) --> statement(S), statement_list(SL).
@@ -529,3 +531,8 @@ eval_expr(elseif(Cond, SL), Env, NewEnv) :-
 % Else if false
 eval_expr(elseif(Cond, _), Env, Env) :-
   eval_expr(Cond, Env, bool('false')).
+
+% Else if false
+eval_expr(elseif(Cond, _, Else), Env, NewEnv) :-
+  eval_expr(Cond, Env, bool('false')),
+  eval(Else, Env, NewEnv).
