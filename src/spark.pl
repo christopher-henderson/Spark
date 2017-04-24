@@ -14,7 +14,7 @@ source_to_tree(Filename) :-
     atom_chars(Atom, Characters),
     lexer(Tokens, Characters, []),
     program(Tree, Tokens, []),
-    % write(Tree), nl,
+    write(Tree), nl,
     eval(Tree).
 
 % ----------------------------------------------------------------------
@@ -220,17 +220,13 @@ branch(if(Cond, SL)) -->
       statement_list(SL),
     ['}'].
 
-% Else
-branch(else(SL)) -->
-  ['else'], ['{'],
-    statement_list(SL),
-  ['}'].
-
 % If-Else
-branch(if(Cond, SL, Else)) -->
+branch(if(Cond, SL, SL2)) -->
     ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
       statement_list(SL),
-    ['}'], branch(Else).
+    ['}'], ['else'], ['{'],
+      statement_list(SL2),
+    ['}'].
 
 % If-ElseIf
 branch(if(Cond, SL, ElseIf)) -->
@@ -511,3 +507,15 @@ eval_expr(if(Cond, _), Env, Env) :-
   eval_expr(Cond, Env, bool('false')).
 
 % If true else
+eval_expr(if(Cond, SL, _), Env, NewEnv) :-
+  eval_expr(Cond, Env, bool('true')),
+  eval(SL, Env, NewEnv).
+
+% If false else
+eval_expr(if(Cond, _, Else), Env, NewEnv) :-
+  eval_expr(Cond, Env, bool('false')),
+  eval(Else, Env, NewEnv).
+
+% Else
+eval_expr(else(SL), Env, NewEnv) :-
+  eval(SL, Env, NewEnv).
