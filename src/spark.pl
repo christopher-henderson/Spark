@@ -13,7 +13,7 @@ source_to_tree(Filename) :-
     atom_codes(Atom, Codes),
     atom_chars(Atom, Characters),
     lexer(Tokens, Characters, []),
-    program(Tree, Tokens, []),
+    program(Tree, Tokens, []), !, % There's an ambiguity somewhere in branching.
     % write(Tree), nl,
     eval(Tree).
 
@@ -268,24 +268,16 @@ program(program(SL)) --> statement_list(SL).
 %
 
 %  Evaluate a program given a statement list and an empty environment.
-eval(program(SL)) :- eval(SL, []).
+eval(program(SL)) :- eval(SL, [], _).
 
-% Evaluate S in Environment and produce NewEnv, then excecute the
-% statement list using NewEnv.
-eval(sl(S, SL), Environment) :-
-  eval(S, Environment, NewEnv),
-  eval(SL, NewEnv).
-
+% Evaluate S in Environment and produce InterimEnv, then excecute the
+% statement list using InterimEnv.
 eval(sl(S, SL), Environment, NewEnv) :-
   eval(S, Environment, InterimEnv),
   eval(SL, InterimEnv, NewEnv).
 
 eval(sl(S), Environment, NewEnv) :-
   eval(S, Environment, NewEnv).
-
-% A statement that has only one statement has no meaningful effect on the
-% environment.
-eval(sl(S), Environment) :- eval(S, Environment, _).
 
 % Evaluate a single statement in an environment.
 eval(stmt(Expression), Environment, NewEnv) :-

@@ -1,12 +1,19 @@
+
 a = 0;
-if (1 < 0) {
-  print a;
-  print 2;
-  a = a + 1;
+if (1 > 0) {
+  a = 1;
 } else {
-  print 20;
+  a = 2;
 }
 print a;
+
+b = 0;
+if (1 < 0) {
+  b = 1;
+} else {
+  b = 2;
+}
+print b;
 
 if (false) {
   print 0;
@@ -17,3 +24,5 @@ if (false) {
 } else {
   print 3;
 }
+
+print 4;
