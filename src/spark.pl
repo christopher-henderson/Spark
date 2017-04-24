@@ -3,18 +3,30 @@
 :- discontiguous eval/2.
 :- discontiguous eval/3.
 
-% Reads in a Spark source file and outputs the parse tree.
+% Reads in a Spark source file and "executes" the program.
 %
-% Executing the query 'working_directory(CWD, CWD)' will output the
+%                        +-------+                           +-------+
+%   +---[Source file]--->| run/1 |---[List of characters]--->| lexer |---+
+%                        +-------+                           +-------+   |
+%                                                                        |
+%   +-------------------------[List of tokens]---------------------------+
+%   |
+%   |     +--------+                     +-------------+
+%   +---->| parser |----[Parse tree]---->| interpreter |----[Output]----->
+%         +--------+                     +-------------+
+%
+% Executing the query '?- working_directory(CWD, CWD).' will output the
 % current working directory in the Prolog interpreter.
 
-source_to_tree(Filename) :-
+run(Filename) :-
+    % Read file into list of characters.
     read_file_to_codes(Filename, Codes, []),
     atom_codes(Atom, Codes),
     atom_chars(Atom, Characters),
-    lexer(Tokens, Characters, []),
-    program(Tree, Tokens, []), !, % There's an ambiguity somewhere in branching.
-    % write(Tree), nl,
+
+    % Tokenize, parse, and evaluate.
+    lexer(Tokens, Characters, []), !,
+    parser(Tree, Tokens, []), !,
     eval(Tree).
 
 % ----------------------------------------------------------------------
