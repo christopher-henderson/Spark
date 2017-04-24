@@ -71,7 +71,7 @@ lexer(Tokens) --> [], {Tokens = []}.
 % ----------------------------------------------------------------------
 
 % Reserved words.
-reserved_words(L) :- L = [
+reserved_words([
     while,
     for,
     if,
@@ -83,7 +83,7 @@ reserved_words(L) :- L = [
     or,
     not,
     xor
-].
+]).
 
 % Identifiers.
 % All atom tokens that are composed entirely of lowercase and uppercase
