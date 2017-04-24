@@ -1,0 +1,6 @@
+- Empty statements lists are not allowed. This disallows:
+  if (true) {
+    // nothing
+  }
+
+- A program that ends in a branch executes fine, but Prolog returns false. Mild issue.
