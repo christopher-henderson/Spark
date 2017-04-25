@@ -311,9 +311,8 @@ env(Identifier, Value, [H | T], NewEnv) :-
 % Build the tree node for id into a single string and use it to update
 % that symbol's value using the given right hand expression.
 eval_expr(ea(I, E), Environment, NewEnv) :-
-  build_symbol(I, Identifier),
   eval_expr(E, Environment, Value),
-  env(Identifier, Value, Environment, NewEnv).
+  env(I, Value, Environment, NewEnv).
 
 % Evaluate integers.
 eval_expr(int(I), _, R) :-
@@ -455,12 +454,8 @@ eval_expr(enq(I, E), Env, bool('false')) :-
   R1 == R2.
 
 % Evaluate an identifier to its value using the provided environment.
-eval_expr(I, Env, Value) :-
-  build_symbol(I, Identifier),
+eval_expr(Identifier, Env, Value) :-
   env(Identifier, Value, Env).
-
-% Evaluate an identifier to a single symbol
-build_symbol(id(I), I).
 
 % Print.
 eval_expr(print(E), Env, Env) :-
