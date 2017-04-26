@@ -27,6 +27,7 @@ run(Filename) :-
     % Tokenize, parse, and evaluate.
     lexer(Tokens, Characters, []), !,
     parser(Tree, Tokens, []), !,
+    % print_term(Tree, []),
     eval(Tree), !.
 
 % ----------------------------------------------------------------------
@@ -139,8 +140,6 @@ expression(I) --> identifier(I).
 expression(B) --> boolean_expression(B).
 expression(I) --> integer_expression(I).
 expression(P) --> print(P).
-expression(I) --> branch(I).
-expression(I) --> loop(I).
 expression(ea(I, E)) --> identifier(I), ['='], expression(E).
 
 integer_expression(I) --> integer(I).
@@ -266,6 +265,10 @@ eval(sl(S, SL), Environment, NewEnv) :-
   eval(SL, InterimEnv, NewEnv).
 
 eval(sl(S), Environment, NewEnv) :-
+  eval(S, Environment, NewEnv).
+
+% Evaluate a single statement in an environment.
+eval(stmt(S), Environment, NewEnv) :-
   eval(S, Environment, NewEnv).
 
 % Evaluate a single statement in an environment.
@@ -463,74 +466,74 @@ eval_expr(print(E), Env, Env) :-
   write(R), nl.
 
 % If true
-eval_expr(if(Cond, SL), Env, NewEnv) :-
+eval(if(Cond, SL), Env, NewEnv) :-
   eval_expr(Cond, Env, bool('true')),
   eval(SL, Env, NewEnv).
 
 % If false
-eval_expr(if(Cond, _), Env, Env) :-
+eval(if(Cond, _), Env, Env) :-
   eval_expr(Cond, Env, bool('false')).
 
 % If true else
-eval_expr(if(Cond, SL, _), Env, NewEnv) :-
+eval(if(Cond, SL, _), Env, NewEnv) :-
   eval_expr(Cond, Env, bool('true')),
   eval(SL, Env, NewEnv).
 
 % If false else
-eval_expr(if(Cond, _, Else), Env, NewEnv) :-
+eval(if(Cond, _, Else), Env, NewEnv) :-
   eval_expr(Cond, Env, bool('false')),
   eval(Else, Env, NewEnv).
 
 % If false else if
-eval_expr(if(Cond, _, ElseIf), Env, NewEnv) :-
+eval(if(Cond, _, ElseIf), Env, NewEnv) :-
   eval_expr(Cond, Env, bool('false')),
-  eval_expr(ElseIf, Env, NewEnv).
+  eval(ElseIf, Env, NewEnv).
 
 % Else If false
-eval_expr(elseif(Cond, SL), Env, NewEnv) :-
+eval(elseif(Cond, SL), Env, NewEnv) :-
   eval_expr(Cond, Env, bool('true')),
   eval(SL, Env, NewEnv).
 
 % Else if false
-eval_expr(elseif(Cond, _), Env, Env) :-
+eval(elseif(Cond, _), Env, Env) :-
   eval_expr(Cond, Env, bool('false')).
 
 % Else if false
-eval_expr(elseif(Cond, _, Else), Env, NewEnv) :-
+eval(elseif(Cond, _, Else), Env, NewEnv) :-
   eval_expr(Cond, Env, bool('false')),
   eval(Else, Env, NewEnv).
 
 % While loop is true
-eval_expr(while(Cond, SL), Env, NewEnv) :-
+eval(while(Cond, SL), Env, NewEnv) :-
   eval_expr(Cond, Env, bool('true')),
   eval(SL, Env, InterimEnv),
-  eval_expr(while(Cond, SL), InterimEnv, NewEnv).
+  eval(while(Cond, SL), InterimEnv, NewEnv).
 
 % While loop is false
-eval_expr(while(Cond, _), Env, Env) :-
+eval(while(Cond, _), Env, Env) :-
   eval_expr(Cond, Env, bool('false')).
 
 % For loop, first pass succedes conditional.
-eval_expr(for(Initializer, Cond, Increment, SL), Env, NewEnv) :-
+eval(for(Initializer, Cond, Increment, SL), Env, NewEnv) :-
   eval(Initializer, Env, Env1),
   eval_expr(Cond, Env1, bool('true')),
   eval(SL, Env1, Env2),
   eval(Increment, Env2, Env3),
-  eval_expr(for(Cond, Increment, SL), Env3, NewEnv).
+  eval(for(Cond, Increment, SL), Env3, NewEnv).
 
 % For loop, first pass fails conditional.
-eval_expr(for(Initializer, Cond, _, _), Env, NewEnv) :-
+eval(for(Initializer, Cond, _, _), Env, NewEnv) :-
   eval(Initializer, Env, InitializedEnv),
   eval_expr(Cond, InitializedEnv, bool('false')),
   NewEnv = InitializedEnv.
 
 % For loop, after first pass success.
-eval_expr(for(Cond, Increment, SL), Env, NewEnv) :-
+eval(for(Cond, Increment, SL), Env, NewEnv) :-
   eval_expr(Cond, Env, bool('true')),
   eval(SL, Env, Env1),
   eval(Increment, Env1, Env2),
-  eval_expr(for(Cond, Increment, SL), Env2, NewEnv).
+  eval(for(Cond, Increment, SL), Env2, NewEnv).
 
 % For loop, after first pass fails.
-eval_expr(for(Cond, _, _), Env, Env) :-
+eval(for(Cond, _, _), Env, Env) :-
   eval_expr(Cond, Env, bool('false')).
