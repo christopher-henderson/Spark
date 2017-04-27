@@ -292,17 +292,6 @@ eval(sl(stmt(return(E))), Environment, ReturnValue, halted) :-
 eval(sl(stmt(return(E)), _), Environment, ReturnValue, halted) :-
   eval_expr(E, Environment, ReturnValue).
 
-%things
-eval(sl(S, _), Environment, NewEnv, halted) :-
-  eval(S, Environment, NewEnv, halted).
-
-eval(sl(S), Environment, NewEnv, halted) :-
-  eval(S, Environment, NewEnv, halted).
-
-% Evaluate a single statement in an environment.
-eval(stmt(S), Environment, NewEnv, halted) :-
-  eval(S, Environment, NewEnv, halted).
-
 % Evaluate S in Environment and produce InterimEnv, then excecute the
 % statement list using InterimEnv.
 eval(sl(S, SL), Environment, NewEnv, continue) :-
@@ -322,6 +311,17 @@ eval(stmt(Expression), Environment, NewEnv, continue) :-
 
 % Evaluating an expression in isolation has no side effects.
 eval(expression(E), _, _) :- eval_expr(E, _).
+
+%things
+eval(sl(S, _), Environment, NewEnv, halted) :-
+  eval(S, Environment, NewEnv, halted).
+
+eval(sl(S), Environment, NewEnv, halted) :-
+  eval(S, Environment, NewEnv, halted).
+
+% Evaluate a single statement in an environment.
+eval(stmt(S), Environment, NewEnv, halted) :-
+  eval(S, Environment, NewEnv, halted).
 
 %
 % Environment Definition
@@ -562,18 +562,15 @@ eval(while(Cond, SL), Env, NewEnv, halted) :-
 eval(while(Cond, _), Env, Env, continue) :-
   eval_expr(Cond, Env, bool('false')).
 
+
+
 % For loop, first pass succedes conditional.
 eval(for(Initializer, Cond, Increment, SL), Env, NewEnv, ExecutionHalted) :-
-  eval(Initializer, Env, Env1, _),
+  eval(Initializer, Env, Env1, continue),
   eval_expr(Cond, Env1, bool('true')),
   eval(SL, Env1, Env2, continue),
   eval(Increment, Env2, Env3, continue),
   eval(for(Cond, Increment, SL), Env3, NewEnv, ExecutionHalted).
-
-eval(for(Initializer, Cond, _, SL), Env, NewEnv, halted) :-
-  eval(Initializer, Env, Env1, continue),
-  eval_expr(Cond, Env1, bool('true')),
-  eval(SL, Env1, NewEnv, halted).
 
 % For loop, first pass fails conditional.
 eval(for(Initializer, Cond, _, _), Env, NewEnv, continue) :-
@@ -588,14 +585,45 @@ eval(for(Cond, Increment, SL), Env, NewEnv, ExecutionHalted) :-
   eval(Increment, Env1, Env2, continue),
   eval(for(Cond, Increment, SL), Env2, NewEnv, ExecutionHalted).
 
-eval(for(Cond, _, SL), Env, NewEnv, halted) :-
-  eval_expr(Cond, Env, bool('true')),
-  eval(SL, Env, NewEnv, halted).
-
 % For loop, after first pass fails.
 eval(for(Cond, _, _), Env, Env, continue) :-
   eval_expr(Cond, Env, bool('false')).
 
+
+
+% % For loop, first pass succedes conditional.
+% eval(for(Initializer, Cond, Increment, SL), Env, NewEnv, ExecutionHalted) :-
+%   eval(Initializer, Env, Env1, continue),
+%   eval_expr(Cond, Env1, bool('true')),
+%   eval(SL, Env1, Env2, continue),
+%   eval(Increment, Env2, Env3, continue),
+%   eval(for(Cond, Increment, SL), Env3, NewEnv, ExecutionHalted).
+%
+% eval(for(Initializer, Cond, _, SL), Env, NewEnv, halted) :-
+%   eval(Initializer, Env, Env1, continue),
+%   eval_expr(Cond, Env1, bool('true')),
+%   eval(SL, Env1, NewEnv, halted).
+%
+% % For loop, first pass fails conditional.
+% eval(for(Initializer, Cond, _, _), Env, NewEnv, continue) :-
+%   eval(Initializer, Env, InitializedEnv, continue),
+%   eval_expr(Cond, InitializedEnv, bool('false')),
+%   NewEnv = InitializedEnv.
+%
+% % For loop, after first pass success.
+% eval(for(Cond, Increment, SL), Env, NewEnv, ExecutionHalted) :-
+%   eval_expr(Cond, Env, bool('true')),
+%   eval(SL, Env, Env1, continue),
+%   eval(Increment, Env1, Env2, continue),
+%   eval(for(Cond, Increment, SL), Env2, NewEnv, ExecutionHalted).
+%
+% eval(for(Cond, _, SL), Env, NewEnv, halted) :-
+%   eval_expr(Cond, Env, bool('true')),
+%   eval(SL, Env, NewEnv, halted).
+%
+% % For loop, after first pass fails.
+% eval(for(Cond, _, _), Env, Env, continue) :-
+%   eval_expr(Cond, Env, bool('false')).
 
 % Function Declaration
 eval_expr(function(Identifier, IdentifierList, SL), Env, NewEnv) :-
@@ -606,22 +634,6 @@ eval_expr(function(Identifier, ValueList), Env, ReturnValue) :-
   env(Identifier, [IdentifierList, SL], Env),
   bind_parameters(IdentifierList, ValueList, BoundParameters, Env),
   eval(SL, BoundParameters, ReturnValue, _).
-
-% Evaluate a function
-% eval_func(sl(S, SL), Environment, ReturnValue) :-
-%   eval(S, Environment, NewEnv),
-%   eval_func(SL, NewEnv, ReturnValue).
-%
-% eval_func(sl(stmt(return(E))), Environment, ReturnValue) :-
-%   eval_expr(E, Environment, ReturnValue).
-%
-% eval_func(sl(stmt(return(E)), _), Environment, ReturnValue) :-
-%   eval_expr(E, Environment, ReturnValue).
-%
-% eval_func(sl(S), Environment, ReturnValue) :-
-%   eval(S, Environment, _),
-%   ReturnValue = nil;
-
 
 bind_parameters(il(void), vl(void), [], _).
 bind_parameters(IL, VL, Target, Env) :-
