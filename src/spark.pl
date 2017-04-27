@@ -606,9 +606,10 @@ eval_expr(function(Identifier, IdentifierList, SL), Env, NewEnv) :-
 eval_expr(function(Identifier, ValueList), Env, ReturnValue) :-
   env(Identifier, [IdentifierList, SL], Env),
   bind_parameters(IdentifierList, ValueList, BoundParameters, Env),
-  eval(SL, BoundParameters, ReturnValue, _).
+  insert_globals(BoundParameters, Env, FinalEnvironment),
+  eval(SL, FinalEnvironment, ReturnValue, _).
 
-bind_parameters(il(void), vl(void), [], _).
+bind_parameters(il(void), vl(void), Env, Env).
 bind_parameters(IL, VL, Target, Env) :-
   bind_parameters(IL, VL, Target, Env, []).
 bind_parameters(il(I), vl(V), Target, Env, Accumulator) :-
@@ -618,3 +619,12 @@ bind_parameters(il(I, IL), vl(V, VL), Target, Env, Accumulator) :-
   eval_expr(V, Env, Value),
   append(Accumulator, [[I, Value]], NewAccumulator),
   bind_parameters(IL, VL, Target, Env, NewAccumulator).
+
+% insert_globals([], Env, FinalEnvironment, Accumulator) :-
+%   append(Env, Accumulator, FinalEnvironment).
+% insert_globals(BoundParameters, [], FinalEnvironment, Accumulator) :-
+%   append(BoundParameters, Accumulator, FinalEnvironment).
+insert_globals([], Env, Env).
+insert_globals([[BName, BValue] | BT], Env, FinalEnvironment) :-
+  env(BName, BValue, Env, NewEnv),
+  insert_globals(BT, NewEnv, FinalEnvironment).
