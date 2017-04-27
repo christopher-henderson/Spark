@@ -30,7 +30,7 @@ run(Filename) :-
     lexer(Tokens, Characters, []), !,
     write("Parsing..."), nl,
     parser(Tree, Tokens, []), !,
-    print_term(Tree, []),
+    % print_term(Tree, []), nl,
     write("Interpreting..."), nl,
     eval(Tree), !.
 

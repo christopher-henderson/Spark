@@ -1,6 +1,8 @@
-function factorial(n) {
-  if (n == 0 or n == 1) {
-    return 1;
+function stuff(a) {
+  if (a == 5) {
+    return a;
   }
-  return n * factorial(n - 1);
+  return stuff(a + 1);
 }
+
+print stuff(1);
