@@ -284,23 +284,40 @@ parser(program(SL)) --> statement_list(SL).
 %
 
 %  Evaluate a program given a statement list and an empty environment.
-eval(program(SL)) :- eval(SL, [], _).
+eval(program(SL)) :- eval(SL, [], _, _).
+
+eval(sl(stmt(return(E))), Environment, ReturnValue, halted) :-
+  eval_expr(E, Environment, ReturnValue).
+
+eval(sl(stmt(return(E)), _), Environment, ReturnValue, halted) :-
+  eval_expr(E, Environment, ReturnValue).
+
+%things
+eval(sl(S, _), Environment, NewEnv, halted) :-
+  eval(S, Environment, NewEnv, halted).
+
+eval(sl(S), Environment, NewEnv, halted) :-
+  eval(S, Environment, NewEnv, halted).
+
+% Evaluate a single statement in an environment.
+eval(stmt(S), Environment, NewEnv, halted) :-
+  eval(S, Environment, NewEnv, halted).
 
 % Evaluate S in Environment and produce InterimEnv, then excecute the
 % statement list using InterimEnv.
-eval(sl(S, SL), Environment, NewEnv) :-
-  eval(S, Environment, InterimEnv),
-  eval(SL, InterimEnv, NewEnv).
+eval(sl(S, SL), Environment, NewEnv, continue) :-
+  eval(S, Environment, InterimEnv, continue),
+  eval(SL, InterimEnv, NewEnv, continue).
 
-eval(sl(S), Environment, NewEnv) :-
-  eval(S, Environment, NewEnv).
-
-% Evaluate a single statement in an environment.
-eval(stmt(S), Environment, NewEnv) :-
-  eval(S, Environment, NewEnv).
+eval(sl(S), Environment, NewEnv, continue) :-
+  eval(S, Environment, NewEnv, continue).
 
 % Evaluate a single statement in an environment.
-eval(stmt(Expression), Environment, NewEnv) :-
+eval(stmt(S), Environment, NewEnv, continue) :-
+  eval(S, Environment, NewEnv, continue).
+
+% Evaluate a single statement in an environment.
+eval(stmt(Expression), Environment, NewEnv, continue) :-
   eval_expr(Expression, Environment, NewEnv).
 
 % Evaluating an expression in isolation has no side effects.
@@ -494,76 +511,89 @@ eval_expr(print(E), Env, Env) :-
   write(R), nl.
 
 % If true
-eval(if(Cond, SL), Env, NewEnv) :-
+eval(if(Cond, SL), Env, NewEnv, ExecutionHalted) :-
   eval_expr(Cond, Env, bool('true')),
-  eval(SL, Env, NewEnv).
+  eval(SL, Env, NewEnv, ExecutionHalted).
 
 % If false
-eval(if(Cond, _), Env, Env) :-
+eval(if(Cond, _), Env, Env, continue) :-
   eval_expr(Cond, Env, bool('false')).
 
 % If true else
-eval(if(Cond, SL, _), Env, NewEnv) :-
+eval(if(Cond, SL, _), Env, NewEnv, ExecutionHalted) :-
   eval_expr(Cond, Env, bool('true')),
-  eval(SL, Env, NewEnv).
+  eval(SL, Env, NewEnv, ExecutionHalted).
 
 % If false else
-eval(if(Cond, _, Else), Env, NewEnv) :-
+eval(if(Cond, _, Else), Env, NewEnv, ExecutionHalted) :-
   eval_expr(Cond, Env, bool('false')),
-  eval(Else, Env, NewEnv).
+  eval(Else, Env, NewEnv, ExecutionHalted).
 
 % If false else if
-eval(if(Cond, _, ElseIf), Env, NewEnv) :-
+eval(if(Cond, _, ElseIf), Env, NewEnv, ExecutionHalted) :-
   eval_expr(Cond, Env, bool('false')),
-  eval(ElseIf, Env, NewEnv).
+  eval(ElseIf, Env, NewEnv, ExecutionHalted).
 
 % Else If false
-eval(elseif(Cond, SL), Env, NewEnv) :-
+eval(elseif(Cond, SL), Env, NewEnv, ExecutionHalted) :-
   eval_expr(Cond, Env, bool('true')),
-  eval(SL, Env, NewEnv).
+  eval(SL, Env, NewEnv, ExecutionHalted).
 
 % Else if false
-eval(elseif(Cond, _), Env, Env) :-
+eval(elseif(Cond, _), Env, Env, continue) :-
   eval_expr(Cond, Env, bool('false')).
 
 % Else if false
-eval(elseif(Cond, _, Else), Env, NewEnv) :-
+eval(elseif(Cond, _, Else), Env, NewEnv, ExecutionHalted) :-
   eval_expr(Cond, Env, bool('false')),
-  eval(Else, Env, NewEnv).
+  eval(Else, Env, NewEnv, ExecutionHalted).
 
 % While loop is true
-eval(while(Cond, SL), Env, NewEnv) :-
+eval(while(Cond, SL), Env, NewEnv, ExecutionHalted) :-
   eval_expr(Cond, Env, bool('true')),
-  eval(SL, Env, InterimEnv),
-  eval(while(Cond, SL), InterimEnv, NewEnv).
+  eval(SL, Env, InterimEnv, continue),
+  eval(while(Cond, SL), InterimEnv, NewEnv, ExecutionHalted).
+
+eval(while(Cond, SL), Env, NewEnv, halted) :-
+  eval_expr(Cond, Env, bool('true')),
+  eval(SL, Env, NewEnv, halted).
 
 % While loop is false
-eval(while(Cond, _), Env, Env) :-
+eval(while(Cond, _), Env, Env, continue) :-
   eval_expr(Cond, Env, bool('false')).
 
 % For loop, first pass succedes conditional.
-eval(for(Initializer, Cond, Increment, SL), Env, NewEnv) :-
-  eval(Initializer, Env, Env1),
+eval(for(Initializer, Cond, Increment, SL), Env, NewEnv, ExecutionHalted) :-
+  eval(Initializer, Env, Env1, _),
   eval_expr(Cond, Env1, bool('true')),
-  eval(SL, Env1, Env2),
-  eval(Increment, Env2, Env3),
-  eval(for(Cond, Increment, SL), Env3, NewEnv).
+  eval(SL, Env1, Env2, continue),
+  eval(Increment, Env2, Env3, _),
+  eval(for(Cond, Increment, SL), Env3, NewEnv, ExecutionHalted).
+
+eval(for(Initializer, Cond, _, SL), Env, NewEnv, halted) :-
+  eval(Initializer, Env, Env1, _),
+  eval_expr(Cond, Env1, bool('true')),
+  eval(SL, Env1, NewEnv, halted).
 
 % For loop, first pass fails conditional.
-eval(for(Initializer, Cond, _, _), Env, NewEnv) :-
-  eval(Initializer, Env, InitializedEnv),
+eval(for(Initializer, Cond, _, _), Env, NewEnv, continue) :-
+  eval(Initializer, Env, InitializedEnv, continue),
   eval_expr(Cond, InitializedEnv, bool('false')),
   NewEnv = InitializedEnv.
 
 % For loop, after first pass success.
-eval(for(Cond, Increment, SL), Env, NewEnv) :-
+eval(for(Cond, Increment, SL), Env, NewEnv, ExecutionHalted) :-
   eval_expr(Cond, Env, bool('true')),
-  eval(SL, Env, Env1),
-  eval(Increment, Env1, Env2),
-  eval(for(Cond, Increment, SL), Env2, NewEnv).
+  eval(SL, Env, Env1, continue),
+  eval(Increment, Env1, Env2, continue),
+  eval(for(Cond, Increment, SL), Env2, NewEnv, ExecutionHalted).
+
+eval(for(Cond, _, SL), Env, NewEnv, halted) :-
+  eval_expr(Cond, Env, bool('true')),
+  eval(SL, Env, NewEnv, halted).
 
 % For loop, after first pass fails.
-eval(for(Cond, _, _), Env, Env) :-
+eval(for(Cond, _, _), Env, Env, continue) :-
   eval_expr(Cond, Env, bool('false')).
 
 
@@ -575,7 +605,7 @@ eval_expr(function(Identifier, IdentifierList, SL), Env, NewEnv) :-
 eval_expr(function(Identifier, ValueList), Env, ReturnValue) :-
   env(Identifier, [IdentifierList, SL], Env),
   bind_parameters(IdentifierList, ValueList, BoundParameters, Env),
-  eval(SL, BoundParameters, ReturnValue).
+  eval(SL, BoundParameters, ReturnValue, _).
 
 % Evaluate a function
 % eval_func(sl(S, SL), Environment, ReturnValue) :-
