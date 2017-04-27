@@ -567,11 +567,11 @@ eval(for(Initializer, Cond, Increment, SL), Env, NewEnv, ExecutionHalted) :-
   eval(Initializer, Env, Env1, _),
   eval_expr(Cond, Env1, bool('true')),
   eval(SL, Env1, Env2, continue),
-  eval(Increment, Env2, Env3, _),
+  eval(Increment, Env2, Env3, continue),
   eval(for(Cond, Increment, SL), Env3, NewEnv, ExecutionHalted).
 
 eval(for(Initializer, Cond, _, SL), Env, NewEnv, halted) :-
-  eval(Initializer, Env, Env1, _),
+  eval(Initializer, Env, Env1, continue),
   eval_expr(Cond, Env1, bool('true')),
   eval(SL, Env1, NewEnv, halted).
 

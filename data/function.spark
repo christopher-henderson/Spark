@@ -4,6 +4,7 @@ z = x + 1;
 
 
 function hello(a) {
+  return 1;
   print a >= 5;
   if (a >= 5) {
     print 1121;
