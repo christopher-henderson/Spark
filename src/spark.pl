@@ -141,6 +141,8 @@ expression(B) --> boolean_expression(B).
 expression(I) --> integer_expression(I).
 expression(P) --> print(P).
 expression(ea(I, E)) --> identifier(I), ['='], expression(E).
+expression(F) --> function_call(F).
+expression(F) --> function_declaration(F).
 
 integer_expression(I) --> integer(I).
 integer_expression(I) --> identifier(I).
@@ -241,6 +243,32 @@ loop(for(Initializer, Cond, Increment, SL)) -->
   ['for'], ['('], statement(Initializer), [';'], boolean_expression(Cond), [';'], statement(Increment), [')'], ['{'],
     statement_list(SL),
   ['}'].
+
+function_declaration(function(Identifier, IdentifierList, SL)) -->
+  ['function'], identifier(Identifier), ['('], identifier_list(IdentifierList), [')'], ['{'],
+    statement_list(SL),
+  ['}'].
+
+function_declaration(function(Identifier, il(void), SL)) -->
+  ['function'], identifier(Identifier), ['('], [')'], ['{'],
+    statement_list(SL),
+  ['}'].
+
+function_call(function(Identifier, ValueList)) -->
+  identifier(Identifier), ['('], value_list(ValueList), [')'].
+
+function_call(function(Identifier, vl(void))) -->
+  identifier(Identifier), ['('], [')'].
+
+return(return(E)) -->
+  ['return'], expression(E).
+
+% identifier_list(il('')) --> [''].
+identifier_list(il(I)) --> identifier(I).
+identifier_list(il(I, IL)) --> identifier(I), [','], identifier_list(IL).
+
+value_list(vl(V)) --> expression(V).
+value_list(vl(V, VL)) --> expression(V), [','], value_list(VL).
 
 statement_list(sl(S)) --> statement(S).
 statement_list(sl(S, SL)) --> statement(S), statement_list(SL).
@@ -537,3 +565,41 @@ eval(for(Cond, Increment, SL), Env, NewEnv) :-
 % For loop, after first pass fails.
 eval(for(Cond, _, _), Env, Env) :-
   eval_expr(Cond, Env, bool('false')).
+
+
+% Function Declaration
+eval_expr(function(Identifier, IdentifierList, SL), Env, NewEnv) :-
+  env(Identifier, [IdentifierList, SL], Env, NewEnv).
+
+% Function Call
+eval_expr(function(Identifier, ValueList), Env, ReturnValue) :-
+  env(Identifier, [IdentifierList, SL], Env),
+  bind_parameters(IdentifierList, ValueList, BoundParameters, Env),
+  eval(SL, BoundParameters, ReturnValue).
+
+% Evaluate a function
+% eval_func(sl(S, SL), Environment, ReturnValue) :-
+%   eval(S, Environment, NewEnv),
+%   eval_func(SL, NewEnv, ReturnValue).
+%
+% eval_func(sl(stmt(return(E))), Environment, ReturnValue) :-
+%   eval_expr(E, Environment, ReturnValue).
+%
+% eval_func(sl(stmt(return(E)), _), Environment, ReturnValue) :-
+%   eval_expr(E, Environment, ReturnValue).
+%
+% eval_func(sl(S), Environment, ReturnValue) :-
+%   eval(S, Environment, _),
+%   ReturnValue = nil;
+
+
+bind_parameters(il(void), vl(void), [], _).
+bind_parameters(IL, VL, Target, Env) :-
+  bind_parameters(IL, VL, Target, Env, []).
+bind_parameters(il(I), vl(V), Target, Env, Accumulator) :-
+  eval_expr(V, Env, Value),
+  append(Accumulator, [[I, Value]], Target).
+bind_parameters(il(I, IL), vl(V, VL), Target, Env, Accumulator) :-
+  eval_expr(V, Env, Value),
+  append(Accumulator, [[I, Value]], NewAccumulator),
+  bind_parameters(IL, VL, Target, Env, NewAccumulator).
