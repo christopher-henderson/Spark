@@ -25,9 +25,12 @@ run(Filename) :-
     atom_chars(Atom, Characters),
 
     % Tokenize, parse, and evaluate.
+    write("Lexing..."), nl,
     lexer(Tokens, Characters, []), !,
+    write("Parsing..."), nl,
     parser(Tree, Tokens, []), !,
     % print_term(Tree, []),
+    write("Interpreting..."), nl,
     eval(Tree), !.
 
 % ----------------------------------------------------------------------
