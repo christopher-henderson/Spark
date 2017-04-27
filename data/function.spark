@@ -1,0 +1,16 @@
+// Bug in a void parameter list and single value given.
+x = 1;
+z = x + 1;
+
+
+function hello(a) {
+  print a >= 5;
+  if (a >= 5) {
+    print 1121;
+    return 1;
+  }
+  print 90;
+  return 2;
+}
+
+print hello(6);
