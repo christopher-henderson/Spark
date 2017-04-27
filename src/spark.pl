@@ -2,7 +2,6 @@
 :- discontiguous eval_expr/2.
 :- discontiguous eval/2.
 :- discontiguous eval/3.
-:- discontiguous boolean_expression/3.
 
 % Reads in a Spark source file and "executes" the program.
 %
