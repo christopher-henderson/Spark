@@ -293,36 +293,27 @@ eval(sl(stmt(return(E))), Environment, ReturnValue, halted) :-
 eval(sl(stmt(return(E)), _), Environment, ReturnValue, halted) :-
   eval_expr(E, Environment, ReturnValue).
 
-% Evaluate S in Environment and produce InterimEnv, then excecute the
-% statement list using InterimEnv.
-eval(sl(S, SL), Environment, NewEnv, continue) :-
-  eval(S, Environment, InterimEnv, continue),
-  eval(SL, InterimEnv, NewEnv, continue).
-
-eval(sl(S), Environment, NewEnv, continue) :-
-  eval(S, Environment, NewEnv, continue).
-
-% Evaluate a single statement in an environment.
-eval(stmt(S), Environment, NewEnv, continue) :-
-  eval(S, Environment, NewEnv, continue).
-
-% Evaluate a single statement in an environment.
 eval(stmt(Expression), Environment, NewEnv, continue) :-
   eval_expr(Expression, Environment, NewEnv).
 
-% Evaluating an expression in isolation has no side effects.
-eval(expression(E), _, _) :- eval_expr(E, _).
+% Evaluate S in Environment and produce InterimEnv, then excecute the
+% statement list using InterimEnv.
+eval(sl(S, SL), Environment, NewEnv, ExecutionHalted) :-
+  eval(S, Environment, InterimEnv, continue),
+  eval(SL, InterimEnv, NewEnv, ExecutionHalted).
 
-%things
-eval(sl(S, _), Environment, NewEnv, halted) :-
-  eval(S, Environment, NewEnv, halted).
-
-eval(sl(S), Environment, NewEnv, halted) :-
-  eval(S, Environment, NewEnv, halted).
+eval(sl(S), Environment, NewEnv, ExecutionHalted) :-
+  eval(S, Environment, NewEnv, ExecutionHalted).
 
 % Evaluate a single statement in an environment.
-eval(stmt(S), Environment, NewEnv, halted) :-
-  eval(S, Environment, NewEnv, halted).
+eval(stmt(S), Environment, NewEnv, ExecutionHalted) :-
+  eval(S, Environment, NewEnv, ExecutionHalted).
+
+% Evaluate a single statement in an environment.
+
+
+% Evaluating an expression in isolation has no side effects.
+eval(expression(E), _, _) :- eval_expr(E, _).
 
 %
 % Environment Definition
