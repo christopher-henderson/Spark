@@ -143,6 +143,7 @@ expression(P) --> print(P).
 expression(ea(I, E)) --> identifier(I), ['='], expression(E).
 expression(F) --> function_call(F).
 expression(F) --> function_declaration(F).
+expression(R) --> return(R).
 
 integer_expression(I) --> integer(I).
 integer_expression(I) --> identifier(I).
@@ -562,8 +563,6 @@ eval(while(Cond, SL), Env, NewEnv, halted) :-
 eval(while(Cond, _), Env, Env, continue) :-
   eval_expr(Cond, Env, bool('false')).
 
-
-
 % For loop, first pass succedes conditional.
 eval(for(Initializer, Cond, Increment, SL), Env, NewEnv, ExecutionHalted) :-
   eval(Initializer, Env, Env1, continue),
@@ -571,6 +570,11 @@ eval(for(Initializer, Cond, Increment, SL), Env, NewEnv, ExecutionHalted) :-
   eval(SL, Env1, Env2, continue),
   eval(Increment, Env2, Env3, continue),
   eval(for(Cond, Increment, SL), Env3, NewEnv, ExecutionHalted).
+
+eval(for(Initializer, Cond, _, SL), Env, NewEnv, halted) :-
+  eval(Initializer, Env, Env1, continue),
+  eval_expr(Cond, Env1, bool('true')),
+  eval(SL, Env1, NewEnv, halted).
 
 % For loop, first pass fails conditional.
 eval(for(Initializer, Cond, _, _), Env, NewEnv, continue) :-
@@ -585,45 +589,13 @@ eval(for(Cond, Increment, SL), Env, NewEnv, ExecutionHalted) :-
   eval(Increment, Env1, Env2, continue),
   eval(for(Cond, Increment, SL), Env2, NewEnv, ExecutionHalted).
 
+eval(for(Cond, _, SL), Env, NewEnv, halted) :-
+  eval_expr(Cond, Env, bool('true')),
+  eval(SL, Env, NewEnv, halted).
+
 % For loop, after first pass fails.
 eval(for(Cond, _, _), Env, Env, continue) :-
   eval_expr(Cond, Env, bool('false')).
-
-
-
-% % For loop, first pass succedes conditional.
-% eval(for(Initializer, Cond, Increment, SL), Env, NewEnv, ExecutionHalted) :-
-%   eval(Initializer, Env, Env1, continue),
-%   eval_expr(Cond, Env1, bool('true')),
-%   eval(SL, Env1, Env2, continue),
-%   eval(Increment, Env2, Env3, continue),
-%   eval(for(Cond, Increment, SL), Env3, NewEnv, ExecutionHalted).
-%
-% eval(for(Initializer, Cond, _, SL), Env, NewEnv, halted) :-
-%   eval(Initializer, Env, Env1, continue),
-%   eval_expr(Cond, Env1, bool('true')),
-%   eval(SL, Env1, NewEnv, halted).
-%
-% % For loop, first pass fails conditional.
-% eval(for(Initializer, Cond, _, _), Env, NewEnv, continue) :-
-%   eval(Initializer, Env, InitializedEnv, continue),
-%   eval_expr(Cond, InitializedEnv, bool('false')),
-%   NewEnv = InitializedEnv.
-%
-% % For loop, after first pass success.
-% eval(for(Cond, Increment, SL), Env, NewEnv, ExecutionHalted) :-
-%   eval_expr(Cond, Env, bool('true')),
-%   eval(SL, Env, Env1, continue),
-%   eval(Increment, Env1, Env2, continue),
-%   eval(for(Cond, Increment, SL), Env2, NewEnv, ExecutionHalted).
-%
-% eval(for(Cond, _, SL), Env, NewEnv, halted) :-
-%   eval_expr(Cond, Env, bool('true')),
-%   eval(SL, Env, NewEnv, halted).
-%
-% % For loop, after first pass fails.
-% eval(for(Cond, _, _), Env, Env, continue) :-
-%   eval_expr(Cond, Env, bool('false')).
 
 % Function Declaration
 eval_expr(function(Identifier, IdentifierList, SL), Env, NewEnv) :-
