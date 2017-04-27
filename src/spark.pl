@@ -2,6 +2,7 @@
 :- discontiguous eval_expr/2.
 :- discontiguous eval/2.
 :- discontiguous eval/3.
+:- discontiguous boolean_expression/3.
 
 % Reads in a Spark source file and "executes" the program.
 %
@@ -29,7 +30,7 @@ run(Filename) :-
     lexer(Tokens, Characters, []), !,
     write("Parsing..."), nl,
     parser(Tree, Tokens, []), !,
-    % print_term(Tree, []),
+    print_term(Tree, []),
     write("Interpreting..."), nl,
     eval(Tree), !.
 
@@ -164,19 +165,15 @@ integer_expression(ed(I, E)) --> identifier(I), ['/'], integer_expression(E).
 integer_expression(er(I, E)) --> identifier(I), ['%'], integer_expression(E).
 
 boolean_expression(B) --> boolean(B).
+boolean_expression(B) --> integer_comparision(B).
 boolean_expression(B) --> identifier(B).
-boolean_expression(elt(I, E)) --> integer(I), ['<'], integer_expression(E).
-boolean_expression(egt(I, E)) --> integer(I), ['>'], integer_expression(E).
-boolean_expression(ele(I, E)) --> integer(I), ['<='], integer_expression(E).
-boolean_expression(ege(I, E)) --> integer(I), ['>='], integer_expression(E).
-boolean_expression(eeq(I, E)) --> integer(I), ['=='], integer_expression(E).
-boolean_expression(enq(I, E)) --> integer(I), ['!='], integer_expression(E).
-boolean_expression(elt(I, E)) --> identifier(I), ['<'], integer_expression(E).
-boolean_expression(egt(I, E)) --> identifier(I), ['>'], integer_expression(E).
-boolean_expression(ele(I, E)) --> identifier(I), ['<='], integer_expression(E).
-boolean_expression(ege(I, E)) --> identifier(I), ['>='], integer_expression(E).
-boolean_expression(eeq(I, E)) --> identifier(I), ['=='], integer_expression(E).
-boolean_expression(enq(I, E)) --> identifier(I), ['!='], integer_expression(E).
+
+integer_comparision(elt(I, E)) --> integer_expression(I), ['<'], integer_expression(E).
+integer_comparision(egt(I, E)) --> integer_expression(I), ['>'], integer_expression(E).
+integer_comparision(ele(I, E)) --> integer_expression(I), ['<='], integer_expression(E).
+integer_comparision(ege(I, E)) --> integer_expression(I), ['>='], integer_expression(E).
+integer_comparision(eeq(I, E)) --> integer_expression(I), ['=='], integer_expression(E).
+integer_comparision(enq(I, E)) --> integer_expression(I), ['!='], integer_expression(E).
 
 boolean_expression(eeq(B, E)) --> boolean(B), ['=='], boolean_expression(E).
 boolean_expression(enq(B, E)) --> boolean(B), ['!='], boolean_expression(E).
@@ -191,6 +188,13 @@ boolean_expression(ebc(B, E)) --> identifier(B), ['and'], boolean_expression(E).
 boolean_expression(ebd(B, E)) --> identifier(B), ['or'], boolean_expression(E).
 boolean_expression(ebx(B, E)) --> identifier(B), ['xor'], boolean_expression(E).
 boolean_expression(ebn(E)) --> ['not'], identifier(E).
+
+boolean_expression(eeq(B, E)) --> integer_comparision(B), ['=='], boolean_expression(E).
+boolean_expression(enq(B, E)) --> integer_comparision(B), ['!='], boolean_expression(E).
+boolean_expression(ebc(B, E)) --> integer_comparision(B), ['and'], boolean_expression(E).
+boolean_expression(ebd(B, E)) --> integer_comparision(B), ['or'], boolean_expression(E).
+boolean_expression(ebx(B, E)) --> integer_comparision(B), ['xor'], boolean_expression(E).
+boolean_expression(ebn(E)) --> ['not'], integer_comparision(E).
 
 % All expressions terminated by a semicolon are statements.
 statement(stmt(E)) --> expression(E), [';'].

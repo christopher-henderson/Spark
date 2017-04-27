@@ -52,4 +52,4 @@ print a or b and b;
 print b or b and a;
 
 
-print 1 == 0 or 2 == 2;
+print 1 == 0 or 2 == 1;
