@@ -1,9 +1,9 @@
 function hello(a) {
   b = 0;
-  while (b < a) {
-    b = b + 1;
+  if (a < 5) {
+    return 1;
   }
-  return b;
+  return 0;
 }
 
 print hello(100);

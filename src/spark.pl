@@ -287,20 +287,27 @@ parser(program(SL)) --> statement_list(SL).
 %  Evaluate a program given a statement list and an empty environment.
 eval(program(SL)) :- eval(SL, [], _, _).
 
-eval(sl(stmt(return(E))), Environment, ReturnValue, halted) :-
-  eval_expr(E, Environment, ReturnValue).
+eval(stmt(return(E)), Environment, ReturnValue, ExecutionHalted) :-
+  eval_expr(E, Environment, ReturnValue),
+  ExecutionHalted = halted.
 
-eval(sl(stmt(return(E)), _), Environment, ReturnValue, halted) :-
-  eval_expr(E, Environment, ReturnValue).
+eval(stmt(return(E), _), Environment, ReturnValue, ExecutionHalted) :-
+  eval_expr(E, Environment, ReturnValue),
+  ExecutionHalted = halted.
 
-eval(stmt(Expression), Environment, NewEnv, continue) :-
-  eval_expr(Expression, Environment, NewEnv).
+eval(stmt(Expression), Environment, NewEnv, ExecutionHalted) :-
+  eval_expr(Expression, Environment, NewEnv),
+  ExecutionHalted = continue.
 
 % Evaluate S in Environment and produce InterimEnv, then excecute the
 % statement list using InterimEnv.
 eval(sl(S, SL), Environment, NewEnv, ExecutionHalted) :-
   eval(S, Environment, InterimEnv, continue),
   eval(SL, InterimEnv, NewEnv, ExecutionHalted).
+
+eval(sl(S, _), Environment, NewEnv, ExecutionHalted) :-
+  eval(S, Environment, NewEnv, halted),
+  ExecutionHalted = halted.
 
 eval(sl(S), Environment, NewEnv, ExecutionHalted) :-
   eval(S, Environment, NewEnv, ExecutionHalted).
