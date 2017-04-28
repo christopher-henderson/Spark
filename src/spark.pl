@@ -1,7 +1,9 @@
+:- discontiguous expression/3.
 :- discontiguous eval_expr/3.
 :- discontiguous eval_expr/2.
 :- discontiguous eval/2.
 :- discontiguous eval/3.
+:- discontiguous eval/4.
 
 % Reads in a Spark source file and "executes" the program.
 %
@@ -29,7 +31,7 @@ run(Filename) :-
     lexer(Tokens, Characters, []), !,
     write("Parsing..."), nl,
     parser(Tree, Tokens, []), !,
-    % print_term(Tree, []), nl,
+    print_term(Tree, []), nl,
     write("Interpreting..."), nl,
     eval(Tree), !.
 
@@ -110,6 +112,12 @@ reserved_words([
     xor
 ]).
 
+% Integers.
+% All atom tokens that are composed entirely of digit characters are
+% parsed as integers.
+integer(int(I)) --> [I], {atom_number(I, _)}.
+integer(neg(I)) --> ['-'], integer(I).
+
 % Identifiers.
 % All atom tokens that are composed entirely of lowercase and uppercase
 % letters that are not reserved words are parsed as identifiers.
@@ -124,13 +132,6 @@ identifier(id(I)) -->
 all_letters([H|T]) :- char_type(H, alpha), all_letters(T).
 all_letters([]).
 
-% Integers.
-% All atom tokens that are composed entirely of digit characters are
-% parsed as integers.
-integer(int(I)) --> [I], {atom_chars(I, C), all_digits(C)}.
-all_digits([H|T]) :- char_type(H, digit), all_digits(T).
-all_digits([]).
-
 % Booleans.
 boolean(bool('true')) --> ['true'].
 boolean(bool('false')) --> ['false'].
@@ -138,144 +139,179 @@ boolean(bool('false')) --> ['false'].
 % Print to stdout.
 print(print(E)) --> ['print'], expression(E).
 
-% Expressions.
+statement(E) --> expression(E), [';'].
+% statement(L) --> loop(L).
+% statement(C) --> conditional_branch(C).
+
 expression(I) --> identifier(I).
-expression(B) --> boolean_expression(B).
-expression(I) --> integer_expression(I).
+expression(B) --> boolean(B).
+expression(I) --> integer(I).
 expression(P) --> print(P).
+% expression(F) --> function_call(F).
+
+lefthand_expression(I) --> identifier(I).
+lefthand_expression(B) --> boolean(B).
+lefthand_expression(I) --> integer(I).
+% lefthand_expression(F) --> function_call(F).
+
 expression(ea(I, E)) --> identifier(I), ['='], expression(E).
-expression(F) --> function_call(F).
-expression(F) --> function_declaration(F).
-expression(R) --> return(R).
 
-integer_expression(I) --> integer(I).
-integer_expression(I) --> identifier(I).
-integer_expression(neg(I)) --> ['-'], integer(I).
-integer_expression(neg(I)) --> ['-'], identifier(I).
-integer_expression(ep(I, E)) --> integer(I), ['+'], integer_expression(E).
-integer_expression(em(I, E)) --> integer(I), ['*'], integer_expression(E).
-integer_expression(es(I, E)) --> integer(I), ['-'], integer_expression(E).
-integer_expression(ed(I, E)) --> integer(I), ['/'], integer_expression(E).
-integer_expression(er(I, E)) --> integer(I), ['%'], integer_expression(E).
-integer_expression(ep(I, E)) --> identifier(I), ['+'], integer_expression(E).
-integer_expression(em(I, E)) --> identifier(I), ['*'], integer_expression(E).
-integer_expression(es(I, E)) --> identifier(I), ['-'], integer_expression(E).
-integer_expression(ed(I, E)) --> identifier(I), ['/'], integer_expression(E).
-integer_expression(er(I, E)) --> identifier(I), ['%'], integer_expression(E).
+expression(ep(LE, E)) --> lefthand_expression(LE), ['+'], expression(E).
+expression(em(LE, E)) --> lefthand_expression(LE), ['*'], expression(E).
+expression(es(LE, E)) --> lefthand_expression(LE), ['-'], expression(E).
+expression(ed(LE, E)) --> lefthand_expression(LE), ['/'], expression(E).
+expression(er(LE, E)) --> lefthand_expression(LE), ['%'], expression(E).
 
-boolean_expression(B) --> boolean(B).
-boolean_expression(B) --> integer_comparision(B).
-boolean_expression(B) --> identifier(B).
+expression(elt(LE, E)) --> lefthand_expression(LE), ['<'], expression(E).
+expression(egt(LE, E)) --> lefthand_expression(LE), ['>'], expression(E).
+expression(ele(LE, E)) --> lefthand_expression(LE), ['<='], expression(E).
+expression(ege(LE, E)) --> lefthand_expression(LE), ['>='], expression(E).
+expression(eeq(LE, E)) --> lefthand_expression(LE), ['=='], expression(E).
+expression(enq(LE, E)) --> lefthand_expression(LE), ['!='], expression(E).
 
-integer_comparision(elt(I, E)) --> integer_expression(I), ['<'], integer_expression(E).
-integer_comparision(egt(I, E)) --> integer_expression(I), ['>'], integer_expression(E).
-integer_comparision(ele(I, E)) --> integer_expression(I), ['<='], integer_expression(E).
-integer_comparision(ege(I, E)) --> integer_expression(I), ['>='], integer_expression(E).
-integer_comparision(eeq(I, E)) --> integer_expression(I), ['=='], integer_expression(E).
-integer_comparision(enq(I, E)) --> integer_expression(I), ['!='], integer_expression(E).
 
-boolean_expression(eeq(B, E)) --> boolean(B), ['=='], boolean_expression(E).
-boolean_expression(enq(B, E)) --> boolean(B), ['!='], boolean_expression(E).
-boolean_expression(ebc(B, E)) --> boolean(B), ['and'], boolean_expression(E).
-boolean_expression(ebd(B, E)) --> boolean(B), ['or'], boolean_expression(E).
-boolean_expression(ebx(B, E)) --> boolean(B), ['xor'], boolean_expression(E).
-boolean_expression(ebn(E)) --> ['not'], boolean_expression(E).
 
-boolean_expression(eeq(B, E)) --> identifier(B), ['=='], boolean_expression(E).
-boolean_expression(enq(B, E)) --> identifier(B), ['!='], boolean_expression(E).
-boolean_expression(ebc(B, E)) --> identifier(B), ['and'], boolean_expression(E).
-boolean_expression(ebd(B, E)) --> identifier(B), ['or'], boolean_expression(E).
-boolean_expression(ebx(B, E)) --> identifier(B), ['xor'], boolean_expression(E).
-boolean_expression(ebn(E)) --> ['not'], identifier(E).
 
-boolean_expression(eeq(B, E)) --> integer_comparision(B), ['=='], boolean_expression(E).
-boolean_expression(enq(B, E)) --> integer_comparision(B), ['!='], boolean_expression(E).
-boolean_expression(ebc(B, E)) --> integer_comparision(B), ['and'], boolean_expression(E).
-boolean_expression(ebd(B, E)) --> integer_comparision(B), ['or'], boolean_expression(E).
-boolean_expression(ebx(B, E)) --> integer_comparision(B), ['xor'], boolean_expression(E).
-boolean_expression(ebn(E)) --> ['not'], integer_comparision(E).
+
+%
+% % Expressions.
+% expression(I) --> identifier(I).
+% expression(B) --> boolean_expression(B).
+% expression(I) --> integer_expression(I).
+% expression(P) --> print(P).
+% expression(ea(I, E)) --> identifier(I), ['='], expression(E).
+% expression(F) --> function_call(F).
+% expression(F) --> function_declaration(F).
+% expression(R) --> return(R).
+
+% integer_expression(I) --> integer(I).
+% integer_expression(I) --> identifier(I).
+% integer_expression(neg(I)) --> ['-'], integer(I).
+% integer_expression(neg(I)) --> ['-'], identifier(I).
+% integer_expression(ep(I, E)) --> integer(I), ['+'], integer_expression(E).
+% integer_expression(em(I, E)) --> integer(I), ['*'], integer_expression(E).
+% integer_expression(es(I, E)) --> integer(I), ['-'], integer_expression(E).
+% integer_expression(ed(I, E)) --> integer(I), ['/'], integer_expression(E).
+% integer_expression(er(I, E)) --> integer(I), ['%'], integer_expression(E).
+% integer_expression(ep(I, E)) --> identifier(I), ['+'], integer_expression(E).
+% integer_expression(em(I, E)) --> identifier(I), ['*'], integer_expression(E).
+% integer_expression(es(I, E)) --> identifier(I), ['-'], integer_expression(E).
+% integer_expression(ed(I, E)) --> identifier(I), ['/'], integer_expression(E).
+% integer_expression(er(I, E)) --> identifier(I), ['%'], integer_expression(E).
+%
+% boolean_expression(B) --> boolean(B).
+% boolean_expression(B) --> integer_comparision(B).
+% boolean_expression(B) --> identifier(B).
+%
+% integer_comparision(elt(I, E)) --> integer_expression(I), ['<'], integer_expression(E).
+% integer_comparision(egt(I, E)) --> integer_expression(I), ['>'], integer_expression(E).
+% integer_comparision(ele(I, E)) --> integer_expression(I), ['<='], integer_expression(E).
+% integer_comparision(ege(I, E)) --> integer_expression(I), ['>='], integer_expression(E).
+% integer_comparision(eeq(I, E)) --> integer_expression(I), ['=='], integer_expression(E).
+% integer_comparision(enq(I, E)) --> integer_expression(I), ['!='], integer_expression(E).
+%
+% boolean_expression(eeq(B, E)) --> boolean(B), ['=='], boolean_expression(E).
+% boolean_expression(enq(B, E)) --> boolean(B), ['!='], boolean_expression(E).
+% boolean_expression(ebc(B, E)) --> boolean(B), ['and'], boolean_expression(E).
+% boolean_expression(ebd(B, E)) --> boolean(B), ['or'], boolean_expression(E).
+% boolean_expression(ebx(B, E)) --> boolean(B), ['xor'], boolean_expression(E).
+% boolean_expression(ebn(E)) --> ['not'], boolean_expression(E).
+%
+% boolean_expression(eeq(B, E)) --> identifier(B), ['=='], boolean_expression(E).
+% boolean_expression(enq(B, E)) --> identifier(B), ['!='], boolean_expression(E).
+% boolean_expression(ebc(B, E)) --> identifier(B), ['and'], boolean_expression(E).
+% boolean_expression(ebd(B, E)) --> identifier(B), ['or'], boolean_expression(E).
+% boolean_expression(ebx(B, E)) --> identifier(B), ['xor'], boolean_expression(E).
+% boolean_expression(ebn(E)) --> ['not'], identifier(E).
+%
+% boolean_expression(eeq(B, E)) --> integer_comparision(B), ['=='], boolean_expression(E).
+% boolean_expression(enq(B, E)) --> integer_comparision(B), ['!='], boolean_expression(E).
+% boolean_expression(ebc(B, E)) --> integer_comparision(B), ['and'], boolean_expression(E).
+% boolean_expression(ebd(B, E)) --> integer_comparision(B), ['or'], boolean_expression(E).
+% boolean_expression(ebx(B, E)) --> integer_comparision(B), ['xor'], boolean_expression(E).
+% boolean_expression(ebn(E)) --> ['not'], integer_comparision(E).
 
 % All expressions terminated by a semicolon are statements.
-statement(stmt(E)) --> expression(E), [';'].
-statement(stmt(E)) --> branch(E).
-statement(stmt(E)) --> loop(E).
-statement(stmt(E)) --> expression(E).
+% statement(stmt(E)) --> expression(E), [';'].
+% statement(stmt(E)) --> branch(E).
+% statement(stmt(E)) --> loop(E).
+% statement(stmt(E)) --> expression(E).
 
-% If
-branch(if(Cond, SL)) -->
-    ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
-      statement_list(SL),
-    ['}'].
-
-% If-Else
-branch(if(Cond, SL, SL2)) -->
-    ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
-      statement_list(SL),
-    ['}'], ['else'], ['{'],
-      statement_list(SL2),
-    ['}'].
-
-% If-ElseIf
-branch(if(Cond, SL, ElseIf)) -->
-    ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
-      statement_list(SL),
-    ['}'], branch(ElseIf).
-
-% ElseIf
-branch(elseif(Cond, SL)) -->
-  ['else'], ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
-    statement_list(SL),
-  ['}'].
-
-% ElseIf-ElseIf
-branch(elseif(Cond, SL, ElseIf)) -->
-  ['else'], ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
-    statement_list(SL),
-  ['}'], branch(ElseIf).
-
-% ElseIf-Else
-branch(elseif(Cond, SL, SL2)) -->
-  ['else'], ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
-    statement_list(SL),
-  ['}'], ['else'], ['{'],
-    statement_list(SL2),
-  ['}'].
-
-loop(while(Cond, SL)) -->
-  ['while'], ['('], boolean_expression(Cond), [')'], ['{'],
-  statement_list(SL),
-  ['}'].
-
-loop(for(Initializer, Cond, Increment, SL)) -->
-  ['for'], ['('], statement(Initializer), [';'], boolean_expression(Cond), [';'], statement(Increment), [')'], ['{'],
-    statement_list(SL),
-  ['}'].
-
-function_declaration(function(Identifier, IdentifierList, SL)) -->
-  ['function'], identifier(Identifier), ['('], identifier_list(IdentifierList), [')'], ['{'],
-    statement_list(SL),
-  ['}'].
-
-function_declaration(function(Identifier, il(void), SL)) -->
-  ['function'], identifier(Identifier), ['('], [')'], ['{'],
-    statement_list(SL),
-  ['}'].
-
-function_call(function(Identifier, ValueList)) -->
-  identifier(Identifier), ['('], value_list(ValueList), [')'].
-
-function_call(function(Identifier, vl(void))) -->
-  identifier(Identifier), ['('], [')'].
-
-return(return(E)) -->
-  ['return'], expression(E).
-
-% identifier_list(il('')) --> [''].
-identifier_list(il(I)) --> identifier(I).
-identifier_list(il(I, IL)) --> identifier(I), [','], identifier_list(IL).
-
-value_list(vl(V)) --> expression(V).
-value_list(vl(V, VL)) --> expression(V), [','], value_list(VL).
+% % If
+% branch(if(Cond, SL)) -->
+%     ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
+%       statement_list(SL),
+%     ['}'].
+%
+% % If-Else
+% branch(if(Cond, SL, SL2)) -->
+%     ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
+%       statement_list(SL),
+%     ['}'], ['else'], ['{'],
+%       statement_list(SL2),
+%     ['}'].
+%
+% % If-ElseIf
+% branch(if(Cond, SL, ElseIf)) -->
+%     ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
+%       statement_list(SL),
+%     ['}'], branch(ElseIf).
+%
+% % ElseIf
+% branch(elseif(Cond, SL)) -->
+%   ['else'], ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
+%     statement_list(SL),
+%   ['}'].
+%
+% % ElseIf-ElseIf
+% branch(elseif(Cond, SL, ElseIf)) -->
+%   ['else'], ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
+%     statement_list(SL),
+%   ['}'], branch(ElseIf).
+%
+% % ElseIf-Else
+% branch(elseif(Cond, SL, SL2)) -->
+%   ['else'], ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
+%     statement_list(SL),
+%   ['}'], ['else'], ['{'],
+%     statement_list(SL2),
+%   ['}'].
+%
+% loop(while(Cond, SL)) -->
+%   ['while'], ['('], boolean_expression(Cond), [')'], ['{'],
+%   statement_list(SL),
+%   ['}'].
+%
+% loop(for(Initializer, Cond, Increment, SL)) -->
+%   ['for'], ['('], statement(Initializer), [';'], boolean_expression(Cond), [';'], statement(Increment), [')'], ['{'],
+%     statement_list(SL),
+%   ['}'].
+%
+% function_declaration(function(Identifier, IdentifierList, SL)) -->
+%   ['function'], identifier(Identifier), ['('], identifier_list(IdentifierList), [')'], ['{'],
+%     statement_list(SL),
+%   ['}'].
+%
+% function_declaration(function(Identifier, il(void), SL)) -->
+%   ['function'], identifier(Identifier), ['('], [')'], ['{'],
+%     statement_list(SL),
+%   ['}'].
+%
+% function_call(function(Identifier, ValueList)) -->
+%   identifier(Identifier), ['('], value_list(ValueList), [')'].
+%
+% function_call(function(Identifier, vl(void))) -->
+%   identifier(Identifier), ['('], [')'].
+%
+% return(return(E)) -->
+%   ['return'], expression(E).
+%
+% % identifier_list(il('')) --> [''].
+% identifier_list(il(I)) --> identifier(I).
+% identifier_list(il(I, IL)) --> identifier(I), [','], identifier_list(IL).
+%
+% value_list(vl(V)) --> expression(V).
+% value_list(vl(V, VL)) --> expression(V), [','], value_list(VL).
 
 statement_list(sl(S)) --> statement(S).
 statement_list(sl(S, SL)) --> statement(S), statement_list(SL).
@@ -301,7 +337,7 @@ eval(stmt(return(E), _), Environment, ReturnValue, ExecutionHalted) :-
   eval_expr(E, Environment, ReturnValue),
   ExecutionHalted = halted.
 
-eval(stmt(Expression), Environment, NewEnv, ExecutionHalted) :-
+eval(Expression, Environment, NewEnv, ExecutionHalted) :-
   eval_expr(Expression, Environment, NewEnv),
   ExecutionHalted = continue.
 
