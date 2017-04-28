@@ -603,17 +603,16 @@ eval(for(Cond, _, _), Env, Env, continue) :-
 
 % Function Declaration
 eval_expr(function(Identifier, IdentifierList, SL), Env, NewEnv) :-
-  CapturedRecords = Env,
-  env(Identifier, [IdentifierList, CapturedRecords, SL], Env, NewEnv).
+  env(Identifier, [IdentifierList, SL], Env, NewEnv).
 
 % Function Call
 eval_expr(function(Identifier, ValueList), Env, ReturnValue) :-
-  env(Identifier, [IdentifierList, CapturedRecords, SL], Env),
+  env(Identifier, [IdentifierList, SL], Env),
   bind_parameters(IdentifierList, ValueList, BoundParameters, Env),
-  insert_closure(BoundParameters, CapturedRecords, FinalEnvironment),
+  insert_closure(BoundParameters, Env, FinalEnvironment),
   eval(SL, FinalEnvironment, ReturnValue, _).
 
-bind_parameters(il(void), vl(void), [], _).
+bind_parameters(il(void), vl(void), Env, Env).
 bind_parameters(IL, VL, Target, Env) :-
   bind_parameters(IL, VL, Target, Env, []).
 bind_parameters(il(I), vl(V), Target, Env, Accumulator) :-
