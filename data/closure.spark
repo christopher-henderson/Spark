@@ -1,0 +1,8 @@
+function func(n) {
+  return function(m) {
+    return m + 2;
+  };
+}
+
+f = func(3);
+print f(3);
