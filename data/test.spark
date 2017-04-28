@@ -3,4 +3,4 @@ function sup(a) {
   return 2;
 }
 
-print sup(1);
+print 2 * sup(1 + 1);
