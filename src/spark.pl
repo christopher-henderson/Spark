@@ -109,7 +109,9 @@ reserved_words([
     and,
     or,
     not,
-    xor
+    xor,
+    function,
+    return
 ]).
 
 % Integers.
@@ -142,18 +144,20 @@ print(print(E)) --> ['print'], expression(E).
 statement(E) --> expression(E), [';'].
 statement(B) --> branch(B).
 statement(L) --> loop(L).
+statement(F) --> function_declaration(F).
 % statement(C) --> conditional_branch(C).
 
 expression(I) --> identifier(I).
 expression(B) --> boolean(B).
 expression(I) --> integer(I).
 expression(P) --> print(P).
-% expression(F) --> function_call(F).
+expression(F) --> function_call(F).
+expression(R) --> return(R).
 
 lefthand_expression(I) --> identifier(I).
 lefthand_expression(B) --> boolean(B).
 lefthand_expression(I) --> integer(I).
-% lefthand_expression(F) --> function_call(F).
+lefthand_expression(F) --> function_call(F).
 
 expression(ea(I, E)) --> identifier(I), ['='], expression(E).
 
@@ -292,32 +296,31 @@ loop(for(Initializer, Cond, Increment, SL)) -->
   ['for'], ['('], expression(Initializer), [';'], expression(Cond), [';'], expression(Increment), [')'], ['{'],
     statement_list(SL),
   ['}'].
-%
-% function_declaration(function(Identifier, IdentifierList, SL)) -->
-%   ['function'], identifier(Identifier), ['('], identifier_list(IdentifierList), [')'], ['{'],
-%     statement_list(SL),
-%   ['}'].
-%
-% function_declaration(function(Identifier, il(void), SL)) -->
-%   ['function'], identifier(Identifier), ['('], [')'], ['{'],
-%     statement_list(SL),
-%   ['}'].
-%
-% function_call(function(Identifier, ValueList)) -->
-%   identifier(Identifier), ['('], value_list(ValueList), [')'].
-%
-% function_call(function(Identifier, vl(void))) -->
-%   identifier(Identifier), ['('], [')'].
-%
-% return(return(E)) -->
-%   ['return'], expression(E).
-%
-% % identifier_list(il('')) --> [''].
-% identifier_list(il(I)) --> identifier(I).
-% identifier_list(il(I, IL)) --> identifier(I), [','], identifier_list(IL).
-%
-% value_list(vl(V)) --> expression(V).
-% value_list(vl(V, VL)) --> expression(V), [','], value_list(VL).
+
+function_declaration(function(Identifier, IdentifierList, SL)) -->
+  ['function'], identifier(Identifier), ['('], identifier_list(IdentifierList), [')'], ['{'],
+    statement_list(SL),
+  ['}'].
+
+function_declaration(function(Identifier, il(void), SL)) -->
+  ['function'], identifier(Identifier), ['('], [')'], ['{'],
+    statement_list(SL),
+  ['}'].
+
+function_call(function(Identifier, ValueList)) -->
+  identifier(Identifier), ['('], value_list(ValueList), [')'].
+
+function_call(function(Identifier, vl(void))) -->
+  identifier(Identifier), ['('], [')'].
+
+return(return(E)) -->
+  ['return'], expression(E).
+
+identifier_list(il(I)) --> identifier(I).
+identifier_list(il(I, IL)) --> identifier(I), [','], identifier_list(IL).
+
+value_list(vl(V)) --> expression(V).
+value_list(vl(V, VL)) --> expression(V), [','], value_list(VL).
 
 statement_list(sl(S)) --> statement(S).
 statement_list(sl(S, SL)) --> statement(S), statement_list(SL).
@@ -335,11 +338,7 @@ parser(program(SL)) --> statement_list(SL).
 %  Evaluate a program given a statement list and an empty environment.
 eval(program(SL)) :- eval(SL, [], _, _).
 
-eval(stmt(return(E)), Environment, ReturnValue, ExecutionHalted) :-
-  eval_expr(E, Environment, ReturnValue),
-  ExecutionHalted = halted.
-
-eval(stmt(return(E), _), Environment, ReturnValue, ExecutionHalted) :-
+eval(return(E), Environment, ReturnValue, ExecutionHalted) :-
   eval_expr(E, Environment, ReturnValue),
   ExecutionHalted = halted.
 
