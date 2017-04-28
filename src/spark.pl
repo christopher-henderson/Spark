@@ -117,6 +117,7 @@ reserved_words([
 % parsed as integers.
 integer(int(I)) --> [I], {atom_number(I, _)}.
 integer(neg(I)) --> ['-'], integer(I).
+integer(neg(I)) --> ['-'], identifier(I).
 
 % Identifiers.
 % All atom tokens that are composed entirely of lowercase and uppercase
