@@ -169,7 +169,12 @@ expression(ege(LE, E)) --> lefthand_expression(LE), ['>='], expression(E).
 expression(eeq(LE, E)) --> lefthand_expression(LE), ['=='], expression(E).
 expression(enq(LE, E)) --> lefthand_expression(LE), ['!='], expression(E).
 
-
+expression(eeq(B, E)) --> lefthand_expression(B), ['=='], expression(E).
+expression(enq(B, E)) --> lefthand_expression(B), ['!='], expression(E).
+expression(ebc(B, E)) --> lefthand_expression(B), ['and'], expression(E).
+expression(ebd(B, E)) --> lefthand_expression(B), ['or'], expression(E).
+expression(ebx(B, E)) --> lefthand_expression(B), ['xor'], expression(E).
+expression(ebn(E)) --> ['not'], expression(E).
 
 
 

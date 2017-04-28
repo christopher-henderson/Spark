@@ -1,51 +1,5 @@
-b = -2;
-a = 5 + -b;
-print a;
-
-/*
-a = 5;
-b = 2;
-print 5 * -2;
-print 5 / 2;
-print 5 + 2;
-print 5 - 2;
-print 5 % 2;
-
-print a * 2;
-print a / 2;
-print a + 2;
-print a - 2;
-print a % 2;
-
-print 5 * b;
-print 5 / b;
-print 5 + b;
-print 5 - b;
-print 5 % b;
-
-print 5 > 2;
-print 5 < 2;
-print 5 >= 2;
-print 5 <= 2;
-print 5 == 2;
-
-print a > 2;
-print a < 2;
-print a >= 2;
-print a <= 2;
-print a == 2;
-
-print 5 > b;
-print 5 < b;
-print 5 >= b;
-print 5 <= b;
-print 5 == b;
-
-print a > b;
-print a < b;
-print a >= b;
-print a <= b;
-print a == b;
-
-print -1;
-*/
+print true;
+print false;
+print true or true or true;
+print false or false or false or 0 < 1;
+print not 1 == 0;

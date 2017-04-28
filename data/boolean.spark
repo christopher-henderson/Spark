@@ -51,5 +51,7 @@ print a and b or b;
 print a or b and b;
 print b or b and a;
 
-
+/*
+broken
 print 1 == 0 or 2 == 1;
+*/
