@@ -116,8 +116,7 @@ reserved_words([
 % All atom tokens that are composed entirely of digit characters are
 % parsed as integers.
 integer(int(I)) --> [I], {atom_number(I, _)}.
-integer(neg(I)) --> ['-'], integer(I).
-integer(neg(I)) --> ['-'], identifier(I).
+integer(neg(I)) --> ['-'], expression(I).
 
 % Identifiers.
 % All atom tokens that are composed entirely of lowercase and uppercase
