@@ -507,7 +507,13 @@ eval_expr(Identifier, Env, Value) :-
 % Print.
 eval_expr(print(E), Env, Env) :-
   eval_expr(E, Env, R),
-  write(R), nl.
+  stdout(R).
+
+stdout(bool(B)) :-
+  write(B), nl.
+
+stdout(I) :-
+  write(I), nl.
 
 % If true
 eval(if(Cond, SL), Env, NewEnv, ExecutionHalted) :-
