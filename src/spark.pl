@@ -141,7 +141,7 @@ print(print(E)) --> ['print'], expression(E).
 
 statement(E) --> expression(E), [';'].
 statement(B) --> branch(B).
-% statement(L) --> loop(L).
+statement(L) --> loop(L).
 % statement(C) --> conditional_branch(C).
 
 expression(I) --> identifier(I).
@@ -282,16 +282,16 @@ branch(elseif(Cond, SL, SL2)) -->
   ['}'], ['else'], ['{'],
     statement_list(SL2),
   ['}'].
-%
-% loop(while(Cond, SL)) -->
-%   ['while'], ['('], boolean_expression(Cond), [')'], ['{'],
-%   statement_list(SL),
-%   ['}'].
-%
-% loop(for(Initializer, Cond, Increment, SL)) -->
-%   ['for'], ['('], statement(Initializer), [';'], boolean_expression(Cond), [';'], statement(Increment), [')'], ['{'],
-%     statement_list(SL),
-%   ['}'].
+
+loop(while(Cond, SL)) -->
+  ['while'], ['('], expression(Cond), [')'], ['{'],
+  statement_list(SL),
+  ['}'].
+
+loop(for(Initializer, Cond, Increment, SL)) -->
+  ['for'], ['('], expression(Initializer), [';'], expression(Cond), [';'], expression(Increment), [')'], ['{'],
+    statement_list(SL),
+  ['}'].
 %
 % function_declaration(function(Identifier, IdentifierList, SL)) -->
 %   ['function'], identifier(Identifier), ['('], identifier_list(IdentifierList), [')'], ['{'],
