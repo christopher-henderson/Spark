@@ -3,4 +3,4 @@
     // nothing
   }
 
-- A program that ends in a branch executes fine, but Prolog returns false. Mild issue.
+- Order of operations does not work.
