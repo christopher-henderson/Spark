@@ -1,6 +1,26 @@
-function sup(a) {
-  return a;
-  return 2;
+/*
+function curryAdd(n) {
+  function curried(m) {
+    return n + m;
+  }
+  return curried;
 }
 
-print 2 * sup(1 + 1);
+func = curryAdd(2);
+print func(3);
+
+
+derp = function(a) {
+  return 1;
+};
+
+print derp(2);
+*/
+
+function f(g, x){
+  return g(x);
+}
+
+print f(function(x) {
+  return x + 1;
+}, 5);

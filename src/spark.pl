@@ -31,7 +31,7 @@ run(Filename) :-
     lexer(Tokens, Characters, []), !,
     write("Parsing..."), nl,
     parser(Tree, Tokens, []), !,
-    print_term(Tree, []), nl,
+    % print_term(Tree, []), nl,
     write("Interpreting..."), nl,
     eval(Tree), !.
 
@@ -153,6 +153,7 @@ expression(I) --> integer(I).
 expression(P) --> print(P).
 expression(F) --> function_call(F).
 expression(R) --> return(R).
+expression(L) --> lambda(L).
 
 lefthand_expression(I) --> identifier(I).
 lefthand_expression(B) --> boolean(B).
@@ -238,6 +239,16 @@ function_declaration(function(Identifier, IdentifierList, SL)) -->
 
 function_declaration(function(Identifier, il(void), SL)) -->
   ['function'], identifier(Identifier), ['('], [')'], ['{'],
+    statement_list(SL),
+  ['}'].
+
+lambda(lambda(IdentifierList, SL)) -->
+  ['function'], ['('], identifier_list(IdentifierList), [')'], ['{'],
+    statement_list(SL),
+  ['}'].
+
+lambda(lambda(il(void), SL)) -->
+  ['function'], ['('], [')'], ['{'],
     statement_list(SL),
   ['}'].
 
@@ -578,31 +589,34 @@ eval(for(Cond, _, _), Env, Env, continue) :-
 
 % Function Declaration
 eval_expr(function(Identifier, IdentifierList, SL), Env, NewEnv) :-
-  env(Identifier, [IdentifierList, SL], Env, NewEnv).
+  CapturedRecords = Env,
+  env(Identifier, [IdentifierList, CapturedRecords, SL], Env, NewEnv).
 
 % Function Call
 eval_expr(function(Identifier, ValueList), Env, ReturnValue) :-
-  env(Identifier, [IdentifierList, SL], Env),
+  env(Identifier, [IdentifierList, CapturedRecords, SL], Env),
   bind_parameters(IdentifierList, ValueList, BoundParameters, Env),
-  insert_globals(BoundParameters, Env, FinalEnvironment),
+  insert_closure(BoundParameters, CapturedRecords, FinalEnvironment),
   eval(SL, FinalEnvironment, ReturnValue, _).
 
-bind_parameters(il(void), vl(void), Env, Env).
+bind_parameters(il(void), vl(void), [], _).
 bind_parameters(IL, VL, Target, Env) :-
   bind_parameters(IL, VL, Target, Env, []).
 bind_parameters(il(I), vl(V), Target, Env, Accumulator) :-
+  I \= void,
   eval_expr(V, Env, Value),
   append(Accumulator, [[I, Value]], Target).
 bind_parameters(il(I, IL), vl(V, VL), Target, Env, Accumulator) :-
+  I \= void,
   eval_expr(V, Env, Value),
   append(Accumulator, [[I, Value]], NewAccumulator),
   bind_parameters(IL, VL, Target, Env, NewAccumulator).
 
-% insert_globals([], Env, FinalEnvironment, Accumulator) :-
-%   append(Env, Accumulator, FinalEnvironment).
-% insert_globals(BoundParameters, [], FinalEnvironment, Accumulator) :-
-%   append(BoundParameters, Accumulator, FinalEnvironment).
-insert_globals([], Env, Env).
-insert_globals([[BName, BValue] | BT], Env, FinalEnvironment) :-
+insert_closure([], Env, Env).
+insert_closure([[BName, BValue] | BT], Env, FinalEnvironment) :-
   env(BName, BValue, Env, NewEnv),
-  insert_globals(BT, NewEnv, FinalEnvironment).
+  insert_closure(BT, NewEnv, FinalEnvironment).
+
+eval_expr(lambda(IdentifierList, SL), Env, R) :-
+  CapturedRecords = Env,
+  R = [IdentifierList, CapturedRecords, SL].
