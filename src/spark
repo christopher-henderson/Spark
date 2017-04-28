@@ -630,6 +630,5 @@ insert_closure([[BName, BValue] | BT], Env, FinalEnvironment) :-
   env(BName, BValue, Env, NewEnv),
   insert_closure(BT, NewEnv, FinalEnvironment).
 
-eval_expr(lambda(IdentifierList, SL), Env, R) :-
-  CapturedRecords = Env,
-  R = [IdentifierList, CapturedRecords, SL].
+eval_expr(lambda(IdentifierList, SL), _, R) :-
+  R = [IdentifierList, SL].
