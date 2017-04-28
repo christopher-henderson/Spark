@@ -140,6 +140,7 @@ boolean(bool('false')) --> ['false'].
 print(print(E)) --> ['print'], expression(E).
 
 statement(E) --> expression(E), [';'].
+statement(B) --> branch(B).
 % statement(L) --> loop(L).
 % statement(C) --> conditional_branch(C).
 
@@ -242,45 +243,45 @@ expression(ebn(E)) --> ['not'], expression(E).
 % statement(stmt(E)) --> loop(E).
 % statement(stmt(E)) --> expression(E).
 
-% % If
-% branch(if(Cond, SL)) -->
-%     ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
-%       statement_list(SL),
-%     ['}'].
-%
-% % If-Else
-% branch(if(Cond, SL, SL2)) -->
-%     ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
-%       statement_list(SL),
-%     ['}'], ['else'], ['{'],
-%       statement_list(SL2),
-%     ['}'].
-%
-% % If-ElseIf
-% branch(if(Cond, SL, ElseIf)) -->
-%     ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
-%       statement_list(SL),
-%     ['}'], branch(ElseIf).
-%
-% % ElseIf
-% branch(elseif(Cond, SL)) -->
-%   ['else'], ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
-%     statement_list(SL),
-%   ['}'].
-%
-% % ElseIf-ElseIf
-% branch(elseif(Cond, SL, ElseIf)) -->
-%   ['else'], ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
-%     statement_list(SL),
-%   ['}'], branch(ElseIf).
-%
-% % ElseIf-Else
-% branch(elseif(Cond, SL, SL2)) -->
-%   ['else'], ['if'], ['('], boolean_expression(Cond), [')'], ['{'],
-%     statement_list(SL),
-%   ['}'], ['else'], ['{'],
-%     statement_list(SL2),
-%   ['}'].
+% If
+branch(if(Cond, SL)) -->
+    ['if'], ['('], expression(Cond), [')'], ['{'],
+      statement_list(SL),
+    ['}'].
+
+% If-Else
+branch(if(Cond, SL, SL2)) -->
+    ['if'], ['('], expression(Cond), [')'], ['{'],
+      statement_list(SL),
+    ['}'], ['else'], ['{'],
+      statement_list(SL2),
+    ['}'].
+
+% If-ElseIf
+branch(if(Cond, SL, ElseIf)) -->
+    ['if'], ['('], expression(Cond), [')'], ['{'],
+      statement_list(SL),
+    ['}'], branch(ElseIf).
+
+% ElseIf
+branch(elseif(Cond, SL)) -->
+  ['else'], ['if'], ['('], expression(Cond), [')'], ['{'],
+    statement_list(SL),
+  ['}'].
+
+% ElseIf-ElseIf
+branch(elseif(Cond, SL, ElseIf)) -->
+  ['else'], ['if'], ['('], expression(Cond), [')'], ['{'],
+    statement_list(SL),
+  ['}'], branch(ElseIf).
+
+% ElseIf-Else
+branch(elseif(Cond, SL, SL2)) -->
+  ['else'], ['if'], ['('], expression(Cond), [')'], ['{'],
+    statement_list(SL),
+  ['}'], ['else'], ['{'],
+    statement_list(SL2),
+  ['}'].
 %
 % loop(while(Cond, SL)) -->
 %   ['while'], ['('], boolean_expression(Cond), [')'], ['{'],
