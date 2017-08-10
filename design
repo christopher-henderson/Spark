@@ -1,0 +1,47 @@
+Paradigm:
+  - Imperative
+  - Procedural
+  - Elements of functional
+  - Dynamically typed (type not determined at compile time).
+  - Strongly typed (undefined behavior causes an error).
+
+Features:
+  - No null value?
+  - Numbers:
+    - Signed Integers
+    - IEEE Double Precision Floats
+  - Booleans
+  - Strings:
+    - Strings can be treated as a linear collection of characters.
+    - Characters are strings with a single element.
+  - Collections:
+    - Lists:
+      - Heterogeneous.
+      - Subscripting for random access.
+      - Head|Tail semantics?
+    - Associative Arrays.
+      - Heterogenous key, value types.
+  - Iteration:
+    - "while"
+    - for-each-in
+    - for-in-range
+  - Conditional Branching:
+    - If, else if, else.
+    - Ternary?
+    - Block assignment?
+  - Procedures:
+    - Functions.
+    - Functions as first class objects.
+    - Lambdas.
+    - Closures.
+    - Multiple return value unpacking.
+    - Optional type annotations for function signature:
+      - Not enforced by the compiler nor the runtime. For human readability.
+    - Pattern matching?
+    - Use of a value from a void function return is a compile time error?
+  - User defined types:
+    - Composition over inheritance.
+    - Shallow OOP support via methods?
+  - Errors:
+    - No exceptions.
+    - Use of error types.
